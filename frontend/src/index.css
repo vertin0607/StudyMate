@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", "Noto Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  --color-ink: #101828;
+  --color-mist: #f4f6f8;
+  --color-accent: #0f766e;
+  --color-accent-soft: #e6f6f3;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-mist);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
