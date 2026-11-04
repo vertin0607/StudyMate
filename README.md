@@ -2,7 +2,7 @@
 
 StudyMate 是一个 AI 个性化学习监督系统。它会记住学习目标、每天的任务、课程、测试和学习汇报，并据此调整后续计划。
 
-当前仓库完成的是**第一阶段：环境与项目骨架**。现在可以在本机启动前端和后端，并确认两边已经连通。学习目标、数据库和 DeepSeek 还没有接入。
+当前仓库完成到**第九阶段：本地 C++ 判题**。学习计划、检测、复习、教学对话、题库和判题结果都保存在 SQLite。打开页面只读取数据库。生成计划、检测、复习、导师发消息，以及点击「AI 分析题目」或「AI 分析错误」，才会调用 DeepSeek。题库不会访问 OJ。用户代码只在 Docker 容器里编译运行；没有 Docker 时会提示安装 Docker Desktop，不会在本机直接运行。
 
 ## 环境
 
@@ -13,7 +13,7 @@ StudyMate 是一个 AI 个性化学习监督系统。它会记住学习目标、
 | Python | 3.10.11（虚拟环境使用这一版） |
 | Node.js | 24.20.0 |
 | npm | 11.19.0 |
-| Git | 终端里找不到 `git` 命令 |
+| Git | 2.56.0.windows.4 |
 
 开发时需要：
 
@@ -44,7 +44,7 @@ Copy-Item .env.example .env
 
 如果 `.venv` 和 `.env` 已经存在，只需执行安装依赖那一行。
 
-`.env` 里的 `DEEPSEEK_API_KEY` 在第一阶段保持空白。不要把密钥写进 Python 或前端代码。
+把 DeepSeek 密钥写在 `backend/.env` 的 `DEEPSEEK_API_KEY` 中，并设置 `DEEPSEEK_MODEL=deepseek-chat`。不要把密钥写进 Python 或前端代码，也不要提交 `.env`。
 
 ### 前端
 
@@ -61,8 +61,10 @@ npm install
 
 ```powershell
 cd D:\StudyMate\backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --reload-dir app --host 127.0.0.1 --port 8000
 ```
+
+`--reload-dir app` 让自动重载只监视业务代码。这样安装 Python 依赖时，不会因为虚拟环境里的文件变化把后端打崩。
 
 前端：
 
@@ -78,17 +80,25 @@ npm run dev
 2. 打开 http://127.0.0.1:8000/docs  
    应看到 FastAPI 自动生成的接口文档，其中有健康检查。
 3. 打开 http://127.0.0.1:5173  
-   页面会进入首页。后端卡片显示「后端运行正常」，顶部显示服务器时间。
+   页面会进入首页。后端卡片显示「后端运行正常」。学习目标数量、今日计划和今日复习都来自数据库，打开首页不会调用 DeepSeek。
 4. 点击侧边栏「学习目标」。  
-   应打开占位页，并说明该功能属于第二阶段。
-5. 在后端目录运行测试：
+   可以新建、编辑、暂停、恢复和删除目标。刷新页面后，刚才保存的目标还在。
+5. 点击侧边栏「学习计划」。  
+   如果今天还没有计划，页面会停在空状态。只有点击「生成今日计划」或「按要求重新生成」才会调用 DeepSeek。完成一项任务后，可以点击「开始知识检测」。
+6. 点击侧边栏「复习」。  
+   页面只读取已经安排的复习。没有到期项时保持空状态。只有点击「开始复习」才会调用 DeepSeek。
+7. 点击侧边栏「AI 导师」。  
+   页面只读取已有目标和历史对话。点击「开始这次对话」也不会调用模型。只有发送消息才会调用 DeepSeek。
+8. 点击侧边栏「我的题库」。  
+   可以粘贴题面和测试数据。只有点击「AI 分析题目」才会调用 DeepSeek。
+9. 在后端目录运行测试：
 
 ```powershell
 cd D:\StudyMate\backend
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-两条测试都应通过。
+测试应全部通过。
 
 ## 故障排查
 
@@ -137,19 +147,18 @@ C:\Users\ACER\AppData\Local\Programs\Python\Python310\python.exe -m venv .venv
 
 ```text
 StudyMate/
-├── backend/          FastAPI。第一阶段只有健康检查
-├── frontend/         React + Vite。第一阶段是页面骨架
+├── backend/          FastAPI、SQLite 和 DeepSeek 调用
+├── frontend/         React + Vite。当前提供首页、学习目标、每日计划、检测和复习
 ├── README.md         安装、启动和排查
 └── DEVELOPMENT.md    阶段划分和代码说明
 ```
 
 更细的文件说明写在 `DEVELOPMENT.md`。
 
-## 第一阶段还没有的功能
+## 还没有完成的功能
 
-- 用户、学习目标和学习记录数据库
-- DeepSeek API
-- 学习计划、课程、测试和汇报
-- 登录与多用户隔离
+- 课程讲解和学习汇报
+- 登录与多用户隔离。数据表已经保留 `user_id`，当前自动使用本地用户 `local`
+- 答题过程中的选项只保存在当前页面，刷新未提交的试卷会清空已选答案
 
 这些会按 `DEVELOPMENT.md` 中的阶段继续实现。

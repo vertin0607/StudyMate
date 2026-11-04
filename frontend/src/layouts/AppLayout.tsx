@@ -1,11 +1,25 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useHealth } from "../hooks/useHealth.ts";
 import { formatServerTime } from "../utils/format.ts";
 import { navItems } from "../utils/navigation.ts";
 
+function navItemActive(pathname: string, to: string): boolean {
+  if (to === "/problems/wrong") {
+    return pathname.startsWith("/problems/wrong");
+  }
+  if (to === "/problems") {
+    return pathname.startsWith("/problems") && !pathname.startsWith("/problems/wrong");
+  }
+  if (to === "/goals" || to === "/reviews" || to === "/tutor") {
+    return pathname === to || pathname.startsWith(`${to}/`);
+  }
+  return pathname === to;
+}
+
 export function AppLayout() {
   const healthState = useHealth();
+  const { pathname } = useLocation();
   const { health, error, loading } = healthState;
   const serverTime = health ? formatServerTime(health.server_time) : null;
 
@@ -27,10 +41,9 @@ export function AppLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end
-              className={({ isActive }) =>
+              className={() =>
                 `block shrink-0 rounded-xl px-3 py-2 text-sm transition ${
-                  isActive
+                  navItemActive(pathname, item.to)
                     ? "bg-white/10 text-white"
                     : "text-slate-300 hover:bg-white/5 hover:text-white"
                 }`

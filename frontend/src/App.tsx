@@ -2,7 +2,20 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "./layouts/AppLayout.tsx";
 import { DashboardPage } from "./pages/DashboardPage.tsx";
+import { GoalDetailPage } from "./pages/GoalDetailPage.tsx";
+import { GoalsPage } from "./pages/GoalsPage.tsx";
 import { PlaceholderPage } from "./pages/PlaceholderPage.tsx";
+import { PlansPage } from "./pages/PlansPage.tsx";
+import { ProblemDetailPage } from "./pages/ProblemDetailPage.tsx";
+import { ProblemImportPage } from "./pages/ProblemImportPage.tsx";
+import { ProblemsPage } from "./pages/ProblemsPage.tsx";
+import { ProblemTopicsPage } from "./pages/ProblemTopicsPage.tsx";
+import { WrongProblemsPage } from "./pages/WrongProblemsPage.tsx";
+import { ProgressPage } from "./pages/ProgressPage.tsx";
+import { QuizPage } from "./pages/QuizPage.tsx";
+import { ReviewDetailPage } from "./pages/ReviewDetailPage.tsx";
+import { ReviewsPage } from "./pages/ReviewsPage.tsx";
+import { TutorPage } from "./pages/TutorPage.tsx";
 
 export default function App() {
   return (
@@ -10,72 +23,36 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route
-          path="/goals"
-          element={
-            <PlaceholderPage
-              title="学习目标"
-              phase="第二阶段"
-              summary="这里将创建、编辑、暂停和删除学习目标，并保存你目前掌握与尚未学习的内容。"
-            />
-          }
-        />
-        <Route
-          path="/goals/:id"
-          element={
-            <PlaceholderPage
-              title="学习目标详情"
-              phase="第二阶段"
-              summary="这里将查看某一个学习目标的资料和学习历史。"
-            />
-          }
-        />
-        <Route
-          path="/plans"
-          element={
-            <PlaceholderPage
-              title="学习计划"
-              phase="第四阶段"
-              summary="这里将展示总体路线、每日任务和计划调整记录。同一天已有计划时会直接读取，不会重复生成。"
-            />
-          }
-        />
+        <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/goals/:id" element={<GoalDetailPage />} />
+        <Route path="/plans" element={<PlansPage />} />
+        <Route path="/tutor" element={<TutorPage />} />
+        <Route path="/tutor/:sessionId" element={<TutorPage />} />
+        <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/reviews/:scheduleId" element={<ReviewDetailPage />} />
         <Route
           path="/learning/:lessonId"
           element={
             <PlaceholderPage
               title="AI 学习课堂"
-              phase="第五阶段"
+              phase="后续阶段"
               summary="这里将按当天任务讲解知识点，并保留课程内容。"
             />
           }
         />
-        <Route
-          path="/quiz/:quizId"
-          element={
-            <PlaceholderPage
-              title="知识测试"
-              phase="第五阶段"
-              summary="这里将逐题作答。客观题由后端按标准答案判分，结果写入数据库。"
-            />
-          }
-        />
-        <Route
-          path="/progress"
-          element={
-            <PlaceholderPage
-              title="学习档案"
-              phase="第六阶段"
-              summary="这里将汇总学习天数、正确率、知识点掌握情况和错题。历史记录会保留。"
-            />
-          }
-        />
+        <Route path="/quiz/:quizId" element={<QuizPage />} />
+        <Route path="/progress" element={<ProgressPage />} />
+        <Route path="/problems" element={<ProblemsPage />} />
+        <Route path="/problems/import" element={<ProblemImportPage />} />
+        <Route path="/problems/topics" element={<ProblemTopicsPage />} />
+        <Route path="/problems/wrong" element={<WrongProblemsPage />} />
+        <Route path="/problems/:problemId" element={<ProblemDetailPage />} />
         <Route
           path="/reports"
           element={
             <PlaceholderPage
               title="学习汇报"
-              phase="第六阶段"
+              phase="后续阶段"
               summary="每天学习结束后在这里提交汇报。长期计划的修改会先给出建议，确认后再生效。"
             />
           }
