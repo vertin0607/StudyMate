@@ -18,6 +18,6 @@ def health_check() -> dict:
         "status": "ok",
         "service": settings.app_name,
         "version": settings.app_version,
-        "phase": 1,
+        "phase": 9,
         "server_time": now.isoformat(timespec="seconds"),
     }

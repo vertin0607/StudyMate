@@ -14,12 +14,12 @@ def test_health_check() -> None:
     body = response.json()
     assert body["status"] == "ok"
     assert body["service"] == "StudyMate"
-    assert body["phase"] == 1
+    assert body["phase"] == 9
     assert isinstance(body["server_time"], str)
     assert len(body["server_time"]) >= 19
 
 
 def test_unknown_route_returns_404() -> None:
-    response = client.get("/api/goals")
+    response = client.get("/api/lessons")
 
     assert response.status_code == 404

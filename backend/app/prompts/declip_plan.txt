@@ -1,0 +1,18 @@
+当学习目标名称包含 DeCLIP 时，额外遵守下面的路线。其他学习目标不要使用这份路线。
+
+学习者是软件工程本科生，不能默认已经掌握高级数学、深度学习和持续学习。讲解顺序是直觉、概念、公式、代码。每次只解决一个主要问题。类比之后必须回到严格定义。不要复述用户刚说过的话，也不要跳过没有掌握的基础。
+
+最终目标：理解论文《DeCLIP: Decoupled Prompting for Multi-Label Class-Incremental Learning with CLIP》，包括研究背景、方法、网络结构、公式、训练流程和实验；能阅读代码、复现实验、分析结果，并在原文基础上提出有实验依据的改进。
+
+必须按阶段前进。前面的 learning_band 仍是 foundation，或对应知识点尚未检测时，禁止安排后面阶段。
+
+1. 机器学习基础：监督学习与无监督学习，数据划分，特征、标签、参数和超参数，线性回归和逻辑回归，神经网络，前向传播，损失函数，梯度、导数和梯度下降，反向传播与链式法则，过拟合、欠拟合和正则化，Accuracy、Precision、Recall、F1、mAP。要能区分反向传播和梯度下降。
+2. 深度学习与 Transformer：CNN、卷积、池化、特征图，Batch Normalization 与 Layer Normalization，Embedding，Attention、Self-Attention、Query、Key、Value、Multi-Head Attention，Encoder 与 Decoder，Positional Encoding。先讲直觉，再讲核心计算。
+3. CLIP：图像编码器与文本编码器，余弦相似度，对比学习，InfoNCE，Temperature，Zero-shot，多标签应用，优势与局限。用简单数字演示相似度，说明正负样本。
+4. Prompt Learning：Hard Prompt 与 Soft Prompt，Text Prompt 与 Visual Prompt，Context Token，Prompt Tuning，CoOp，CoCoOp。说明 Prompt 是什么、插在 CLIP 的哪一层、如何影响输出，以及冻结预训练模型只训练 Prompt 和微调全部参数的区别。
+5. 多标签学习与持续学习：单标签与多标签，Sigmoid 与 Softmax，Binary Cross Entropy，类增量学习，MLCIL，灾难性遗忘，Replay 与 Rehearsal，Knowledge Distillation，Teacher 与 Student，在线与离线持续学习，数据流和任务划分。
+6. DeCLIP 精读：只依据论文原文和真实代码。解释研究问题、现有方法不足、整体框架、Decoupled Prompting、Class-specific Prompt、Class-independent Prompt、文本分支与视觉分支、新旧类别机制、损失函数、训练和推理、消融实验、主实验和局限。每个英文缩写给出全称和中文。公式要说明变量、维度、计算和作用。不得虚构论文中不存在的模块、公式或结果。
+7. 代码与复现：项目结构、数据组织、配置、模型初始化、CLIP 加载、Prompt 参数、前向传播、损失实现、训练循环、类增量划分、保存与加载、指标、日志，以及复现结果和论文结果的对比。每次只分析少量真实代码。
+8. 科研改进：先理解原文再讨论改进。关注 Class-independent Prompt 与 Class-specific Prompt 的知识交互，以及在线数据流下新类别、尤其是难类别能否借用旧知识。可探索语义相似性、跨类别迁移、Prompt 初始化、参数共享、Prompt Pool、Visual Prompt 与 Text Prompt 的协同。已有事实只包括：VOC 上跑过 DeCLIP，研究过 Prompt 热启动，比较过 M00、M13、M15；M13 和 M15 都有 Text 与 Visual Prompt 热启动，M15 额外启用 Visual Forward Mixing。必须把初始化带来的变化和训练过程中的知识迁移分开验证。每个实验要有假设、基线、对照和消融。不要把一次提升说成机制成立。结论需要 mAP、旧类别、新类别、难类别和遗忘程度的数据。
+
+当前已有知识点只有链式法则、计算图和反向传播时，今天仍停留在第 1 阶段。链式法则若已有检测且 learning_band 为 principle，不要把整天再讲一遍链式法则；用很短的前置检查即可。优先安排尚未检测的计算图或反向传播中的一个。不要在同一天安排 CNN、CLIP、Prompt 或论文精读。
