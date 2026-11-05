@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 
 from app.models.knowledge import KnowledgePoint
 from app.models.plan import StudyPlan, StudyTask
+from app.models.explain import QuestionExplanation
 from app.models.quiz import KnowledgeMasteryEvent, Quiz, QuizAnswer, QuizQuestion
 from app.services import goal_service
 from app.services.ai.deepseek_client import complete_json
@@ -308,14 +309,16 @@ def _request_quiz(goal, plan, task, points, allowed: set[int], focus_id: int | N
     last_error = "检测题目未通过校验"
     raw = ""
     for attempt in range(MAX_ATTEMPTS):
-        raw = complete_json(messages)
         try:
+            raw = complete_json(messages, max_tokens=2500)
             return parse_quiz(raw, allowed, focus_id)
         except AIError as exc:
             last_error = exc.message
+            logger.warning("知识检测出题未通过：%s", last_error)
             if attempt + 1 >= MAX_ATTEMPTS:
                 break
-            messages = build_repair_messages(messages, raw, exc.message)
+            if raw:
+                messages = build_repair_messages(messages, raw, exc.message)
     raise AIError(last_error, status_code=502)
 
 
@@ -360,10 +363,19 @@ def _apply_mastery(session: Session, quiz: Quiz, point_scores: dict[int, list[in
         events = session.exec(
             select(KnowledgeMasteryEvent)
             .where(KnowledgeMasteryEvent.knowledge_point_id == point.id)
-            .order_by(KnowledgeMasteryEvent.created_at)
+            .order_by(KnowledgeMasteryEvent.created_at, KnowledgeMasteryEvent.id)
         ).all()
-        previous = None if not events else point.mastery_level
         history = [event.quiz_score for event in events]
+        if events:
+            last = events[-1]
+            if point.mastery_level == 0 and last.new_level > 0:
+                previous = last.new_level
+            else:
+                previous = point.mastery_level
+        elif point.mastery_level > 0:
+            previous = point.mastery_level
+        else:
+            previous = None
         level, status, reason = next_mastery(previous, history, latest)
         session.add(
             KnowledgeMasteryEvent(
@@ -473,6 +485,9 @@ def _result_payload(session: Session, quiz: Quiz) -> dict:
     for question in _questions(session, quiz.id):
         answer = session.exec(select(QuizAnswer).where(QuizAnswer.question_id == question.id)).first()
         point = session.get(KnowledgePoint, question.knowledge_point_id)
+        explained = session.exec(
+            select(QuestionExplanation).where(QuestionExplanation.question_id == question.id)
+        ).first()
         questions.append(
             {
                 "id": question.id,
@@ -488,6 +503,7 @@ def _result_payload(session: Session, quiz: Quiz) -> dict:
                 "score": 0 if answer is None else answer.score,
                 "error_reason": "" if answer is None else answer.error_reason,
                 "suggestion": "" if answer is None else answer.suggestion,
+                "has_explanation": explained is not None,
             }
         )
         if point is not None and point.id not in seen_points:
@@ -513,6 +529,7 @@ def _result_payload(session: Session, quiz: Quiz) -> dict:
     return {
         "id": quiz.id,
         "goal_id": quiz.goal_id,
+        "task_id": quiz.task_id,
         "title": quiz.title,
         "status": quiz.status,
         "score": quiz.score,

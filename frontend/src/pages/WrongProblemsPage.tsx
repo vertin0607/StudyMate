@@ -74,33 +74,33 @@ export function WrongProblemsPage() {
     <div className="mx-auto max-w-5xl">
       <Link to="/problems" className="text-sm font-medium text-accent">返回题库</Link>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">错题本</h1>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">这里只显示你主动标记的错题。没有判题结果时，提交代码不会自动出现在这里。</p>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">这里只显示你主动标记的错题。没有判题结果时，提交代码不会自动出现在这里。</p>
       <form className="mt-6 grid gap-3 md:grid-cols-2" onSubmit={(event) => event.preventDefault()}>
-        <select value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm">
+        <select value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="rounded-2xl border border-line px-4 py-2 text-sm">
           <option value="">全部难度</option>
           <option value="easy">简单</option>
           <option value="medium">中等</option>
           <option value="hard">困难</option>
           <option value="unknown">未设置</option>
         </select>
-        <select value={topicId} onChange={(event) => setTopicId(event.target.value)} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm">
+        <select value={topicId} onChange={(event) => setTopicId(event.target.value)} className="rounded-2xl border border-line px-4 py-2 text-sm">
           <option value="">全部知识点</option>
           {topics.flatMap((group) => group.topics).map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
         </select>
       </form>
-      {loading && <p className="mt-6 text-sm text-slate-500">正在读取错题…</p>}
+      {loading && <p className="mt-6 text-sm text-muted">正在读取错题…</p>}
       {error && <p className="mt-6 text-sm text-rose-700">{error}</p>}
-      {!loading && rows.length === 0 && <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-8 text-sm text-slate-600">还没有错题。</p>}
+      {!loading && rows.length === 0 && <p className="mt-6 rounded-3xl border border-dashed border-line bg-surface px-6 py-8 text-sm text-muted">还没有错题。</p>}
       <ul className="mt-4 space-y-3">
         {rows.map((item) => (
-          <li key={item.id} className="rounded-3xl border border-slate-200 bg-white p-5">
+          <li key={item.id} className="rounded-3xl border border-line bg-surface p-5">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <Link to={`/problems/${item.problem_id}`} className="text-lg font-semibold">{item.title}</Link>
-              <span className="text-sm text-slate-500">{difficultyLabels[item.difficulty] ?? item.difficulty}</span>
+              <span className="text-sm text-muted">{difficultyLabels[item.difficulty] ?? item.difficulty}</span>
             </div>
-            <p className="mt-2 text-sm text-slate-600">{reasonLabels[item.reason_type] ?? item.reason_type}{item.reason_detail ? ` · ${item.reason_detail}` : ""}</p>
-            {item.topics.length > 0 && <p className="mt-1 text-sm text-slate-500">{item.topics.map((topic) => topic.name).join("、")}</p>}
-            {item.related_submission_id && <p className="mt-1 text-sm text-slate-500">关联提交 #{item.related_submission_id}。加入错题不会改写这条提交的代码或判题结果。</p>}
+            <p className="mt-2 text-sm text-muted">{reasonLabels[item.reason_type] ?? item.reason_type}{item.reason_detail ? ` · ${item.reason_detail}` : ""}</p>
+            {item.topics.length > 0 && <p className="mt-1 text-sm text-muted">{item.topics.map((topic) => topic.name).join("、")}</p>}
+            {item.related_submission_id && <p className="mt-1 text-sm text-muted">关联提交 #{item.related_submission_id}。加入错题不会改写这条提交的代码或判题结果。</p>}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -109,11 +109,11 @@ export function WrongProblemsPage() {
                   setReasonType(item.reason_type);
                   setReasonDetail(item.reason_detail);
                 }}
-                className="rounded-full border border-slate-200 px-3 py-1.5 text-sm"
+                className="rounded-full border border-line px-3 py-1.5 text-sm"
               >
                 修改原因
               </button>
-              <button type="button" onClick={() => void remove(item.problem_id)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm">移出错题</button>
+              <button type="button" onClick={() => void remove(item.problem_id)} className="rounded-full border border-line px-3 py-1.5 text-sm">移出错题</button>
             </div>
             {editing === item.problem_id && (
               <form
@@ -123,11 +123,11 @@ export function WrongProblemsPage() {
                   void save(item.problem_id);
                 }}
               >
-                <select value={reasonType} onChange={(event) => setReasonType(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm">
+                <select value={reasonType} onChange={(event) => setReasonType(event.target.value)} className="w-full rounded-2xl border border-line px-3 py-2 text-sm">
                   {Object.entries(reasonLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
-                <textarea value={reasonDetail} onChange={(event) => setReasonDetail(event.target.value)} rows={2} className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm" />
-                <button type="submit" className="rounded-full bg-ink px-4 py-2 text-sm text-white">保存</button>
+                <textarea value={reasonDetail} onChange={(event) => setReasonDetail(event.target.value)} rows={2} className="w-full rounded-2xl border border-line px-3 py-2 text-sm" />
+                <button type="submit" className="rounded-full bg-accent px-4 py-2 text-sm text-on-accent">保存</button>
               </form>
             )}
           </li>

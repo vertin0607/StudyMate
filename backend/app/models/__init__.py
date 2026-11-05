@@ -1,5 +1,6 @@
 """导入数据表，确保 SQLModel 在建表前已经注册它们。"""
 
+from app.models.explain import KnowledgeExplainMessage, KnowledgeExplainSession, QuestionExplanation
 from app.models.goal import LearningGoal
 from app.models.judge import ProblemJudgeCaseResult, ProblemJudgeResult
 from app.models.knowledge import KnowledgePoint
@@ -15,7 +16,10 @@ from app.models.tutor import TutorMessage, TutorSession
 from app.models.user import User, UserSession
 
 __all__ = [
+    "KnowledgeExplainMessage",
+    "KnowledgeExplainSession",
     "KnowledgeMasteryEvent",
+    "QuestionExplanation",
     "KnowledgePoint",
     "LearningGoal",
     "PlanRevision",

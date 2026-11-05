@@ -12,6 +12,18 @@
       rel="stylesheet"
     />
     <title>StudyMate</title>
+    <script>
+      (function () {
+        try {
+          var last = localStorage.getItem("studymate_theme_last");
+          var allowed = ["sky", "sakura", "forest", "lavender", "sunset", "ocean", "night"];
+          if (allowed.indexOf(last) !== -1) {
+            document.documentElement.setAttribute("data-theme", last);
+            document.documentElement.style.colorScheme = last === "night" ? "dark" : "light";
+          }
+        } catch (error) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

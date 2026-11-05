@@ -143,17 +143,17 @@ export function TutorPage() {
   return (
     <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="space-y-4">
-        <section className="rounded-3xl border border-slate-200 bg-white p-4">
+        <section className="rounded-3xl border border-line bg-surface p-4">
           <h1 className="text-lg font-semibold">AI 导师</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">打开页面只读取已有目标和对话。发送消息时才会调用 DeepSeek。</p>
-          <label className="mt-4 block text-sm text-slate-500" htmlFor="tutor-goal">
+          <p className="mt-2 text-sm leading-6 text-muted">打开页面只读取已有目标和对话。发送消息时才会调用 DeepSeek。</p>
+          <label className="mt-4 block text-sm text-muted" htmlFor="tutor-goal">
             关联学习目标
           </label>
           <select
             id="tutor-goal"
             value={goalId}
             onChange={(event) => setGoalId(event.target.value ? Number(event.target.value) : "")}
-            className="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm"
+            className="mt-2 w-full rounded-2xl border border-line px-3 py-2 text-sm"
           >
             <option value="">不关联目标</option>
             {goals.map((goal) => (
@@ -162,14 +162,14 @@ export function TutorPage() {
               </option>
             ))}
           </select>
-          <button type="button" onClick={startSession} disabled={creating} className="mt-3 w-full rounded-full bg-ink px-4 py-2 text-sm text-white disabled:opacity-60">
+          <button type="button" onClick={startSession} disabled={creating} className="mt-3 w-full rounded-full bg-accent px-4 py-2 text-sm text-on-accent disabled:opacity-60">
             {creating ? "正在创建…" : "开始这次对话"}
           </button>
         </section>
-        <section className="rounded-3xl border border-slate-200 bg-white p-4">
+        <section className="rounded-3xl border border-line bg-surface p-4">
           <h2 className="text-sm font-semibold">历史会话</h2>
-          {loading && <p className="mt-3 text-sm text-slate-500">正在读取…</p>}
-          {!loading && sessions.length === 0 && <p className="mt-3 text-sm text-slate-500">还没有对话。</p>}
+          {loading && <p className="mt-3 text-sm text-muted">正在读取…</p>}
+          {!loading && sessions.length === 0 && <p className="mt-3 text-sm text-muted">还没有对话。</p>}
           <ul className="mt-3 space-y-2">
             {sessions.map((item) => (
               <li key={item.id}>
@@ -179,20 +179,20 @@ export function TutorPage() {
                   className={`w-full rounded-2xl px-3 py-2 text-left text-sm ${item.id === sessionId ? "bg-accent-soft" : "bg-mist"}`}
                 >
                   <span className="block font-medium">{item.title}</span>
-                  <span className="mt-1 block text-slate-500">{item.goal_title ?? "未关联目标"}</span>
+                  <span className="mt-1 block text-muted">{item.goal_title ?? "未关联目标"}</span>
                 </button>
               </li>
             ))}
           </ul>
         </section>
-        <section className="rounded-3xl border border-slate-200 bg-white p-4">
+        <section className="rounded-3xl border border-line bg-surface p-4">
           <h2 className="text-sm font-semibold">相关知识点</h2>
-          {points.length === 0 && <p className="mt-3 text-sm text-slate-500">选择一个已有目标的对话后，这里显示掌握度。</p>}
+          {points.length === 0 && <p className="mt-3 text-sm text-muted">选择一个已有目标的对话后，这里显示掌握度。</p>}
           <ul className="mt-3 space-y-3">
             {points.map((point) => (
               <li key={point.id} className="text-sm">
                 <p className="font-medium">{point.name}</p>
-                <p className="mt-1 text-slate-500">
+                <p className="mt-1 text-muted">
                   {point.mastery_assessed ? `${point.status_label} · ${point.mastery_level}` : "尚未评估"}
                   {point.latest_score === null ? "" : ` · 最近 ${point.latest_score} 分`}
                 </p>
@@ -201,16 +201,16 @@ export function TutorPage() {
           </ul>
         </section>
       </aside>
-      <section className="flex min-h-[70vh] flex-col rounded-3xl border border-slate-200 bg-white p-4 md:p-6">
+      <section className="flex min-h-[70vh] flex-col rounded-3xl border border-line bg-surface p-4 md:p-6">
         {error && <p className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
-        {!sessionId && <p className="text-sm leading-6 text-slate-600">从左侧开始一次对话。之后的问题会留在同一次会话里，刷新后可以继续。</p>}
+        {!sessionId && <p className="text-sm leading-6 text-muted">从左侧开始一次对话。之后的问题会留在同一次会话里，刷新后可以继续。</p>}
         {sessionId && detail && (
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold">{detail.title}</h2>
-              <p className="mt-1 text-sm text-slate-500">{detail.goal_title ?? "这次对话没有关联学习目标"}</p>
+              <p className="mt-1 text-sm text-muted">{detail.goal_title ?? "这次对话没有关联学习目标"}</p>
             </div>
-            <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full border border-slate-200 px-3 py-1 text-sm">
+            <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full border border-line px-3 py-1 text-sm">
               删除
             </button>
           </div>
@@ -219,7 +219,7 @@ export function TutorPage() {
           {detail?.messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
-          {sending && <p className="text-sm text-slate-500">正在组织讲解…</p>}
+          {sending && <p className="text-sm text-muted">正在组织讲解…</p>}
         </div>
         {sessionId && (
           <form
@@ -234,9 +234,9 @@ export function TutorPage() {
               onChange={(event) => setDraft(event.target.value)}
               rows={3}
               placeholder="问一个现在想弄清的问题"
-              className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm"
+              className="min-w-0 flex-1 rounded-2xl border border-line px-4 py-3 text-sm"
             />
-            <button type="submit" disabled={sending || !draft.trim()} className="rounded-full bg-ink px-5 py-2 text-sm text-white disabled:opacity-60">
+            <button type="submit" disabled={sending || !draft.trim()} className="rounded-full bg-accent px-5 py-2 text-sm text-on-accent disabled:opacity-60">
               {sending ? "发送中…" : "发送"}
             </button>
           </form>
@@ -259,8 +259,8 @@ export function TutorPage() {
 function MessageBubble({ message }: { message: TutorMessage }) {
   const mine = message.role === "user";
   return (
-    <article className={`max-w-[95%] rounded-3xl px-4 py-3 ${mine ? "ml-auto bg-ink text-white" : "bg-mist"}`}>
-      <p className={`text-xs ${mine ? "text-slate-300" : "text-slate-500"}`}>{mine ? "我" : "导师"}</p>
+    <article className={`max-w-[95%] rounded-3xl px-4 py-3 ${mine ? "ml-auto bg-accent text-on-accent" : "bg-mist"}`}>
+      <p className={`text-xs ${mine ? "text-on-accent/70" : "text-muted"}`}>{mine ? "我" : "导师"}</p>
       {mine ? <p className="mt-2 whitespace-pre-wrap text-sm leading-7">{message.content}</p> : <TutorMarkdown content={message.content} />}
     </article>
   );

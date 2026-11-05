@@ -3,7 +3,7 @@ import remarkGfm from "remark-gfm";
 
 export function ProblemMarkdown({ content }: { content: string }) {
   return (
-    <div className="problem-markdown text-sm leading-7 text-slate-700">
+    <div className="problem-markdown text-sm leading-7 text-ink">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
   );

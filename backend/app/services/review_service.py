@@ -444,11 +444,13 @@ def _request_review_quiz(session: Session, goal: LearningGoal, point: KnowledgeP
         "knowledge_point": {
             "id": point.id,
             "name": point.name,
+            "description": point.description,
+            "difficulty": point.difficulty,
             "status": point.status,
             "mastery_level": point.mastery_level,
         },
         "past_mistakes": wrongs,
-        "instruction": "围绕过去的错误出题。没有错题时，检查这个知识点里容易混淆的地方。",
+        "instruction": "先判断知识点类型并列出五个考查维度，再出题。围绕过去的错误出题。没有错题时，检查这个知识点里容易混淆的地方。不要默认五道单选。",
     }
     messages = [
         {"role": "system", "content": REVIEW_PROMPT.read_text(encoding="utf-8")},
@@ -458,14 +460,16 @@ def _request_review_quiz(session: Session, goal: LearningGoal, point: KnowledgeP
     last_error = "复习题目未通过校验"
     raw = ""
     for attempt in range(MAX_ATTEMPTS):
-        raw = complete_json(messages)
         try:
+            raw = complete_json(messages, max_tokens=2500)
             return parse_quiz(raw, allowed, point.id)
         except AIError as exc:
             last_error = exc.message
+            logger.warning("复习出题未通过：%s", last_error)
             if attempt + 1 >= MAX_ATTEMPTS:
                 break
-            messages = build_repair_messages(messages, raw, exc.message)
+            if raw:
+                messages = build_repair_messages(messages, raw, exc.message)
     raise AIError(last_error, status_code=502)
 
 
@@ -543,11 +547,14 @@ def _card(session: Session, schedule: ReviewSchedule, today) -> dict:
         queue = "upcoming"
     else:
         queue = "later"
+    goal = session.get(LearningGoal, schedule.goal_id)
     return {
         "id": schedule.id,
         "goal_id": schedule.goal_id,
+        "goal_title": None if goal is None else goal.title,
         "knowledge_point_id": schedule.knowledge_point_id,
         "name": "知识点" if point is None else point.name,
+        "last_reviewed_at": schedule.last_reviewed_at,
         "mastery_level": mastery,
         "mastery_assessed": assessed and mastery is not None or schedule.last_score is not None,
         "status_label": "尚未评估" if point is None else status_label(point.status, bool(assessed)),

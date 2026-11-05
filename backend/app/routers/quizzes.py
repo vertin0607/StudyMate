@@ -5,7 +5,7 @@ from sqlmodel import Session
 
 from app.database import get_session
 from app.schemas.quiz import QuizGenerateRequest, QuizSubmitRequest
-from app.services import quiz_service
+from app.services import explain_service, quiz_service
 from app.services.ai.errors import AIError
 
 router = APIRouter(prefix="/quizzes", tags=["quizzes"])
@@ -42,3 +42,13 @@ def quiz_detail(quiz_id: int, session: Session = Depends(get_session)) -> dict:
 def submit_quiz(quiz_id: int, payload: QuizSubmitRequest, session: Session = Depends(get_session)) -> dict:
     answers = [item.model_dump() for item in payload.answers]
     return _call(lambda: quiz_service.submit_quiz(session, quiz_id, answers))
+
+
+@router.get("/{quiz_id}/questions/{question_id}/explain")
+def get_question_explain(quiz_id: int, question_id: int, session: Session = Depends(get_session)) -> dict:
+    return explain_service.get_question_explain(session, quiz_id, question_id)
+
+
+@router.post("/{quiz_id}/questions/{question_id}/explain")
+def explain_question(quiz_id: int, question_id: int, session: Session = Depends(get_session)) -> dict:
+    return _call(lambda: explain_service.explain_question(session, quiz_id, question_id))

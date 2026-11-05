@@ -45,12 +45,12 @@ export function ProblemTopicsPage() {
     <div className="mx-auto max-w-5xl">
       <Link to="/problems" className="text-sm font-medium text-accent">返回题库</Link>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">知识点分类</h1>
-      <p className="mt-3 text-sm leading-6 text-slate-600">分类来自固定目录。新的名称需要你在题目详情里确认后才会出现。</p>
+      <p className="mt-3 text-sm leading-6 text-muted">分类来自固定目录。新的名称需要你在题目详情里确认后才会出现。</p>
       {error && <p className="mt-4 text-sm text-rose-700">{error}</p>}
       <div className="mt-6 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <div className="space-y-4">
           {groups.map((group) => (
-            <section key={group.name} className="rounded-3xl border border-slate-200 bg-white p-4">
+            <section key={group.name} className="rounded-3xl border border-line bg-surface p-4">
               <h2 className="text-sm font-semibold">{group.name}</h2>
               <ul className="mt-2 space-y-1">
                 {group.topics.map((topic) => (
@@ -64,10 +64,10 @@ export function ProblemTopicsPage() {
             </section>
           ))}
         </div>
-        <section className="rounded-3xl border border-slate-200 bg-white p-5">
-          {!selected && <p className="text-sm text-slate-600">选择左侧的知识点后，这里显示关联题目。</p>}
+        <section className="rounded-3xl border border-line bg-surface p-5">
+          {!selected && <p className="text-sm text-muted">选择左侧的知识点后，这里显示关联题目。</p>}
           {selected && <h2 className="text-lg font-semibold">{title}</h2>}
-          {selected && problems.length === 0 && <p className="mt-3 text-sm text-slate-500">这个知识点下还没有题目。</p>}
+          {selected && problems.length === 0 && <p className="mt-3 text-sm text-muted">这个知识点下还没有题目。</p>}
           <ul className="mt-3 space-y-2">
             {problems.map((problem) => (
               <li key={problem.id}>

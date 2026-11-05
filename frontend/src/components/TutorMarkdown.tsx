@@ -15,7 +15,7 @@ const katexOptions = {
 
 export function TutorMarkdown({ content }: { content: string }) {
   return (
-    <div className="tutor-markdown text-sm leading-7 text-slate-700">
+    <div className="tutor-markdown text-sm leading-7 text-ink">
       <ReactMarkdown
         remarkPlugins={[[remarkMath, { singleDollarTextMath: true }], remarkGfm]}
         rehypePlugins={[[rehypeKatex, katexOptions]]}

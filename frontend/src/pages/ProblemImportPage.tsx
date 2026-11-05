@@ -53,7 +53,7 @@ export function ProblemImportPage() {
     <div className="mx-auto max-w-3xl">
       <Link to="/problems" className="text-sm font-medium text-accent">返回题库</Link>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">导入题目</h1>
-      <p className="mt-3 text-sm leading-6 text-slate-600">把题面和测试数据粘贴进来。这里不会访问 OJ，也不会调用 DeepSeek。</p>
+      <p className="mt-3 text-sm leading-6 text-muted">把题面和测试数据粘贴进来。这里不会访问 OJ，也不会调用 DeepSeek。</p>
       {error && <p className="mt-4 text-sm text-rose-700">{error}</p>}
       {warning && <p className="mt-4 text-sm text-amber-800">{warning}</p>}
       <form className="mt-6 space-y-4" onSubmit={(event) => event.preventDefault()}>
@@ -79,7 +79,7 @@ export function ProblemImportPage() {
         </Section>
         <Section title="自定义测试数据">
           {form.test_cases.map((item, index) => (
-            <div key={index} className="rounded-2xl border border-slate-200 p-3">
+            <div key={index} className="rounded-2xl border border-line p-3">
               <Field label="名称" value={item.name} onChange={(value) => updateCase(index, { name: value })} />
               <Area label="输入" value={item.input_data} onChange={(value) => updateCase(index, { input_data: value })} rows={3} mono />
               <Area label="预期输出" value={item.expected_output} onChange={(value) => updateCase(index, { expected_output: value })} rows={3} mono />
@@ -88,7 +88,7 @@ export function ProblemImportPage() {
               </button>
             </div>
           ))}
-          <button type="button" className="rounded-full border border-slate-200 px-4 py-2 text-sm" onClick={() => patch({ test_cases: [...form.test_cases, { ...emptyCase, name: `自定义 ${form.test_cases.length + 1}` }] })}>
+          <button type="button" className="rounded-full border border-line px-4 py-2 text-sm" onClick={() => patch({ test_cases: [...form.test_cases, { ...emptyCase, name: `自定义 ${form.test_cases.length + 1}` }] })}>
             添加一组测试数据
           </button>
         </Section>
@@ -96,10 +96,10 @@ export function ProblemImportPage() {
           <Area label="备注" value={form.note} onChange={(value) => patch({ note: value })} rows={3} />
         </Section>
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={saving} onClick={() => void submit("draft")} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm disabled:opacity-60">
+          <button type="button" disabled={saving} onClick={() => void submit("draft")} className="rounded-full border border-line bg-surface px-4 py-2 text-sm disabled:opacity-60">
             {saving ? "正在保存…" : "保存草稿"}
           </button>
-          <button type="button" disabled={saving} onClick={() => void submit("ready")} className="rounded-full bg-ink px-4 py-2 text-sm text-white disabled:opacity-60">
+          <button type="button" disabled={saving} onClick={() => void submit("ready")} className="rounded-full bg-accent px-4 py-2 text-sm text-on-accent disabled:opacity-60">
             {saving ? "正在保存…" : "正式导入"}
           </button>
         </div>
@@ -114,7 +114,7 @@ export function ProblemImportPage() {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5">
+    <section className="rounded-3xl border border-line bg-surface p-5">
       <h2 className="text-lg font-semibold">{title}</h2>
       <div className="mt-3 space-y-3">{children}</div>
     </section>
@@ -123,18 +123,18 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="block text-sm text-slate-500">
+    <label className="block text-sm text-muted">
       {label}
-      <input value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-ink" />
+      <input value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-2xl border border-line px-3 py-2 text-ink" />
     </label>
   );
 }
 
 function Area({ label, value, onChange, rows, mono = false }: { label: string; value: string; onChange: (value: string) => void; rows: number; mono?: boolean }) {
   return (
-    <label className="block text-sm text-slate-500">
+    <label className="block text-sm text-muted">
       {label}
-      <textarea value={value} rows={rows} onChange={(event) => onChange(event.target.value)} className={`mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-ink ${mono ? "font-mono" : ""}`} />
+      <textarea value={value} rows={rows} onChange={(event) => onChange(event.target.value)} className={`mt-1 w-full rounded-2xl border border-line px-3 py-2 text-ink ${mono ? "font-mono" : ""}`} />
     </label>
   );
 }

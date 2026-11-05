@@ -92,7 +92,7 @@ export function ProblemDetailPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-500">正在读取题目…</p>;
+    return <p className="text-sm text-muted">正在读取题目…</p>;
   }
   if (!problem) {
     return <p className="text-sm text-rose-700">{error ?? "题目不存在"}</p>;
@@ -104,19 +104,19 @@ export function ProblemDetailPage() {
         <div>
           <Link to="/problems" className="text-sm font-medium text-accent">返回题库</Link>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">{problem.title}</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-muted">
             {problem.source_platform}
             {problem.source_problem_id ? ` · ${problem.source_problem_id}` : ""}
             {problem.source_url ? ` · ${problem.source_url}` : ""}
           </p>
         </div>
-        <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm">
+        <button type="button" onClick={() => setConfirmDelete(true)} className="rounded-full border border-line bg-surface px-4 py-2 text-sm">
           删除题目
         </button>
       </div>
       {error && <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
       <ProblemTextEditor problem={problem} onChange={setProblem} />
-      <section className="max-h-[32rem] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5">
+      <section className="max-h-[32rem] overflow-y-auto rounded-3xl border border-line bg-surface p-5">
         <h2 className="text-lg font-semibold">原始题目</h2>
         <div className="mt-3"><ProblemMarkdown content={problem.description || "还没有题面。"} /></div>
         {problem.input_description && <Block title="输入格式" text={problem.input_description} />}
@@ -127,15 +127,15 @@ export function ProblemDetailPage() {
       </section>
       <ProblemWorkspace key={problem.id} problemId={problem.id} />
       <PracticePanel key={`practice-${problem.id}`} problemId={problem.id} />
-      <section className="rounded-3xl border border-slate-200 bg-white p-5">
+      <section className="rounded-3xl border border-line bg-surface p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">AI 分析</h2>
-          <button type="button" onClick={() => void analyze()} disabled={analyzing} className="rounded-full bg-ink px-4 py-2 text-sm text-white disabled:opacity-60">
+          <button type="button" onClick={() => void analyze()} disabled={analyzing} className="rounded-full bg-accent px-4 py-2 text-sm text-on-accent disabled:opacity-60">
             {analyzing ? "正在分析…" : "AI 分析题目"}
           </button>
         </div>
         {problem.analysis_status === "failed" && <p className="mt-3 text-sm text-rose-700">{problem.analysis_error || "分析失败，可以重新分析。"}</p>}
-        {problem.analysis_status === "pending" && <p className="mt-3 text-sm text-slate-500">这道题还没有分析。</p>}
+        {problem.analysis_status === "pending" && <p className="mt-3 text-sm text-muted">这道题还没有分析。</p>}
         {problem.analysis && <AnalysisView analysis={problem.analysis} problemId={problemId} onChange={setProblem} />}
         <ClassificationEditor key={`${problem.updated_at}-${problem.topics.map((item) => item.topic_id).join("-")}`} problem={problem} topics={topics} onChange={setProblem} />
       </section>
@@ -190,18 +190,18 @@ function ProblemTextEditor({ problem, onChange }: { problem: ProblemDetail; onCh
   }
 
   if (!open) {
-    return <button type="button" onClick={() => setOpen(true)} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm">编辑题面</button>;
+    return <button type="button" onClick={() => setOpen(true)} className="rounded-full border border-line bg-surface px-4 py-2 text-sm">编辑题面</button>;
   }
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5">
+    <section className="rounded-3xl border border-line bg-surface p-5">
       <h2 className="text-lg font-semibold">编辑题面</h2>
-      <p className="mt-1 text-sm text-slate-500">这里只改题目原文。已经单独保存的测试数据不会被这次保存覆盖。</p>
+      <p className="mt-1 text-sm text-muted">这里只改题目原文。已经单独保存的测试数据不会被这次保存覆盖。</p>
       {error && <p className="mt-2 text-sm text-rose-700">{error}</p>}
-      <input value={title} onChange={(event) => setTitle(event.target.value)} className="mt-3 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm" />
-      <textarea value={description} rows={8} onChange={(event) => setDescription(event.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm" />
+      <input value={title} onChange={(event) => setTitle(event.target.value)} className="mt-3 w-full rounded-2xl border border-line px-3 py-2 text-sm" />
+      <textarea value={description} rows={8} onChange={(event) => setDescription(event.target.value)} className="mt-2 w-full rounded-2xl border border-line px-3 py-2 text-sm" />
       <div className="mt-3 flex gap-2">
-        <button type="button" onClick={() => void save()} disabled={saving} className="rounded-full bg-ink px-4 py-2 text-sm text-white disabled:opacity-60">{saving ? "正在保存…" : "保存题面"}</button>
-        <button type="button" onClick={() => setOpen(false)} className="rounded-full border border-slate-200 px-4 py-2 text-sm">取消</button>
+        <button type="button" onClick={() => void save()} disabled={saving} className="rounded-full bg-accent px-4 py-2 text-sm text-on-accent disabled:opacity-60">{saving ? "正在保存…" : "保存题面"}</button>
+        <button type="button" onClick={() => setOpen(false)} className="rounded-full border border-line px-4 py-2 text-sm">取消</button>
       </div>
     </section>
   );
@@ -210,8 +210,8 @@ function ProblemTextEditor({ problem, onChange }: { problem: ProblemDetail; onCh
 function Block({ title, text, mono = false }: { title: string; text: string; mono?: boolean }) {
   return (
     <div className="mt-4">
-      <h3 className="text-sm font-medium text-slate-500">{title}</h3>
-      <pre className={mono ? "io-block mt-2" : "mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700"}>{text}</pre>
+      <h3 className="text-sm font-medium text-muted">{title}</h3>
+      <pre className={mono ? "io-block mt-2" : "mt-2 whitespace-pre-wrap text-sm leading-6 text-ink"}>{text}</pre>
     </div>
   );
 }
@@ -226,7 +226,7 @@ function AnalysisView({
   onChange: (problem: ProblemDetail) => void;
 }) {
   return (
-    <div className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
+    <div className="mt-4 space-y-3 text-sm leading-6 text-ink">
       <p>课程：{analysis.course} · 难度：{difficultyLabels[analysis.difficulty] ?? analysis.difficulty}</p>
       <p>算法类型：{analysis.algorithm_types.join("、")}</p>
       <p>核心能力：{analysis.core_abilities.join("、")}</p>
@@ -243,7 +243,7 @@ function AnalysisView({
             <button
               key={item.name}
               type="button"
-              className="mt-2 mr-2 rounded-full border border-slate-200 px-3 py-1"
+              className="mt-2 mr-2 rounded-full border border-line px-3 py-1"
               onClick={() => {
                 void confirmTopic(problemId, item.name, item.relevance, item.reason).then(onChange);
               }}
@@ -291,13 +291,13 @@ function ClassificationEditor({ problem, topics, onChange }: { problem: ProblemD
   }
 
   return (
-    <div className="mt-5 border-t border-slate-100 pt-4">
+    <div className="mt-5 border-t border-line pt-4">
       <h3 className="text-sm font-semibold">手动调整分类</h3>
-      <p className="mt-1 text-sm text-slate-500">保存后，再次分析不会覆盖你改过的课程、难度和知识点。</p>
+      <p className="mt-1 text-sm text-muted">保存后，再次分析不会覆盖你改过的课程、难度和知识点。</p>
       {error && <p className="mt-2 text-sm text-rose-700">{error}</p>}
       <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <input value={course} onChange={(event) => setCourse(event.target.value)} placeholder="课程" className="rounded-2xl border border-slate-200 px-3 py-2 text-sm" />
-        <select value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="rounded-2xl border border-slate-200 px-3 py-2 text-sm">
+        <input value={course} onChange={(event) => setCourse(event.target.value)} placeholder="课程" className="rounded-2xl border border-line px-3 py-2 text-sm" />
+        <select value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="rounded-2xl border border-line px-3 py-2 text-sm">
           <option value="unknown">未设置</option>
           <option value="easy">简单</option>
           <option value="medium">中等</option>
@@ -317,7 +317,7 @@ function ClassificationEditor({ problem, topics, onChange }: { problem: ProblemD
                 <select
                   value={selected.relevance}
                   onChange={(event) => setLinks((current) => current.map((item) => item.topic_id === topic.id ? { ...item, relevance: event.target.value as "primary" | "secondary" } : item))}
-                  className="rounded-full border border-slate-200 px-2 py-1"
+                  className="rounded-full border border-line px-2 py-1"
                 >
                   <option value="primary">主要考点</option>
                   <option value="secondary">次要考点</option>
@@ -327,7 +327,7 @@ function ClassificationEditor({ problem, topics, onChange }: { problem: ProblemD
           );
         })}
       </ul>
-      <button type="button" onClick={() => void save()} disabled={saving} className="mt-3 rounded-full border border-slate-200 px-4 py-2 text-sm disabled:opacity-60">
+      <button type="button" onClick={() => void save()} disabled={saving} className="mt-3 rounded-full border border-line px-4 py-2 text-sm disabled:opacity-60">
         {saving ? "正在保存…" : "保存分类"}
       </button>
     </div>
@@ -369,9 +369,9 @@ function TestCaseEditor({ problem, onChange }: { problem: ProblemDetail; onChang
   }
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5">
+    <section className="rounded-3xl border border-line bg-surface p-5">
       <h2 className="text-lg font-semibold">测试数据</h2>
-      <p className="mt-1 text-sm text-slate-500">输入和输出按原文保存。编辑时先写入下方文本框，确认后再保存。</p>
+      <p className="mt-1 text-sm text-muted">输入和输出按原文保存。编辑时先写入下方文本框，确认后再保存。</p>
       {error && <p className="mt-2 text-sm text-rose-700">{error}</p>}
       <ul className="mt-4 space-y-3">
         {problem.test_cases.map((item) => (
@@ -389,18 +389,18 @@ function TestCaseEditor({ problem, onChange }: { problem: ProblemDetail; onChang
         ))}
       </ul>
       {editing && (
-        <div className="mt-4 rounded-2xl border border-slate-200 p-3">
+        <div className="mt-4 rounded-2xl border border-line p-3">
           <p className="text-sm font-medium">正在编辑 {editing.name}。离开页面前请先保存，否则这次修改只留在当前页面。</p>
-          <textarea value={editing.input_data} rows={4} onChange={(event) => setEditing({ ...editing, input_data: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 font-mono text-sm" />
-          <textarea value={editing.expected_output} rows={4} onChange={(event) => setEditing({ ...editing, expected_output: event.target.value })} className="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 font-mono text-sm" />
-          <button type="button" onClick={() => void saveEdit()} className="mt-2 rounded-full bg-ink px-4 py-2 text-sm text-white">保存这组测试数据</button>
+          <textarea value={editing.input_data} rows={4} onChange={(event) => setEditing({ ...editing, input_data: event.target.value })} className="mt-2 w-full rounded-2xl border border-line px-3 py-2 font-mono text-sm" />
+          <textarea value={editing.expected_output} rows={4} onChange={(event) => setEditing({ ...editing, expected_output: event.target.value })} className="mt-2 w-full rounded-2xl border border-line px-3 py-2 font-mono text-sm" />
+          <button type="button" onClick={() => void saveEdit()} className="mt-2 rounded-full bg-accent px-4 py-2 text-sm text-on-accent">保存这组测试数据</button>
         </div>
       )}
       <div className="mt-4 grid gap-2">
-        <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="rounded-2xl border border-slate-200 px-3 py-2 text-sm" />
-        <textarea value={draft.input_data} rows={3} placeholder="输入数据" onChange={(event) => setDraft({ ...draft, input_data: event.target.value })} className="rounded-2xl border border-slate-200 px-3 py-2 font-mono text-sm" />
-        <textarea value={draft.expected_output} rows={3} placeholder="预期输出" onChange={(event) => setDraft({ ...draft, expected_output: event.target.value })} className="rounded-2xl border border-slate-200 px-3 py-2 font-mono text-sm" />
-        <button type="button" onClick={() => void createCase()} className="rounded-full border border-slate-200 px-4 py-2 text-sm">添加测试数据</button>
+        <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="rounded-2xl border border-line px-3 py-2 text-sm" />
+        <textarea value={draft.input_data} rows={3} placeholder="输入数据" onChange={(event) => setDraft({ ...draft, input_data: event.target.value })} className="rounded-2xl border border-line px-3 py-2 font-mono text-sm" />
+        <textarea value={draft.expected_output} rows={3} placeholder="预期输出" onChange={(event) => setDraft({ ...draft, expected_output: event.target.value })} className="rounded-2xl border border-line px-3 py-2 font-mono text-sm" />
+        <button type="button" onClick={() => void createCase()} className="rounded-full border border-line px-4 py-2 text-sm">添加测试数据</button>
       </div>
     </section>
   );
@@ -412,11 +412,11 @@ function NoteEditor({ problem, onChange }: { problem: ProblemDetail; onChange: (
   const [saving, setSaving] = useState(false);
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5">
+    <section className="rounded-3xl border border-line bg-surface p-5">
       <h2 className="text-lg font-semibold">个人学习记录</h2>
-      <p className="mt-1 text-sm text-slate-500">做题记录会在后续阶段接入。这里先保存笔记和你自己的思路。</p>
-      <textarea value={content} rows={4} onChange={(event) => setContent(event.target.value)} placeholder="笔记" className="mt-3 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm" />
-      <textarea value={idea} rows={4} onChange={(event) => setIdea(event.target.value)} placeholder="个人解题思路" className="mt-2 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm" />
+      <p className="mt-1 text-sm text-muted">做题记录会在后续阶段接入。这里先保存笔记和你自己的思路。</p>
+      <textarea value={content} rows={4} onChange={(event) => setContent(event.target.value)} placeholder="笔记" className="mt-3 w-full rounded-2xl border border-line px-3 py-2 text-sm" />
+      <textarea value={idea} rows={4} onChange={(event) => setIdea(event.target.value)} placeholder="个人解题思路" className="mt-2 w-full rounded-2xl border border-line px-3 py-2 text-sm" />
       <button
         type="button"
         disabled={saving}
@@ -427,7 +427,7 @@ function NoteEditor({ problem, onChange }: { problem: ProblemDetail; onChange: (
             .then(onChange)
             .finally(() => setSaving(false));
         }}
-        className="mt-3 rounded-full bg-ink px-4 py-2 text-sm text-white disabled:opacity-60"
+        className="mt-3 rounded-full bg-accent px-4 py-2 text-sm text-on-accent disabled:opacity-60"
       >
         {saving ? "正在保存…" : "保存笔记"}
       </button>

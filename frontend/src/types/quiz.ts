@@ -36,6 +36,7 @@ export type GradedQuestion = QuizQuestion & {
   score: number;
   error_reason: string;
   suggestion: string;
+  has_explanation?: boolean;
 };
 
 export type MasteryUpdate = {
@@ -52,6 +53,7 @@ export type MasteryUpdate = {
 export type QuizResult = {
   id: number;
   goal_id: number;
+  task_id?: number | null;
   title: string;
   status: string;
   score: number;

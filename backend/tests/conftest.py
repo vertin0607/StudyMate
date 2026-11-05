@@ -22,6 +22,7 @@ def _clean_goals() -> None:
     from app.models.practice import ProblemLearningStatus, ProblemPracticeRecord, ProblemWrongRecord
     from app.models.problem import Problem, ProblemNote, ProblemTestCase, ProblemTopic, ProblemTopicLink
     from app.models.submission import ProblemCodeDraft, ProblemSubmission
+    from app.models.explain import KnowledgeExplainMessage, KnowledgeExplainSession, QuestionExplanation
     from app.models.quiz import KnowledgeMasteryEvent, Quiz, QuizAnswer, QuizQuestion
     from app.models.recommendation import TrainingRecommendation
     from app.models.review import ReviewRecord, ReviewSchedule
@@ -46,6 +47,9 @@ def _clean_goals() -> None:
         session.exec(delete(ProblemTopic))
         session.exec(delete(TutorMessage))
         session.exec(delete(TutorSession))
+        session.exec(delete(KnowledgeExplainMessage))
+        session.exec(delete(KnowledgeExplainSession))
+        session.exec(delete(QuestionExplanation))
         session.exec(delete(ReviewRecord))
         session.exec(delete(ReviewSchedule))
         session.exec(delete(QuizAnswer))

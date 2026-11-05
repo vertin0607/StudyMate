@@ -8,7 +8,7 @@ export function PracticeGrowth({ practice, goalSelected }: { practice: GrowthRep
   const counts = practice.judge_counts;
   return (
     <div>
-      <p className="rounded-2xl bg-accent-soft px-4 py-3 text-sm leading-6 text-slate-700">
+      <p className="rounded-2xl bg-accent-soft px-4 py-3 text-sm leading-6 text-ink">
         全部题库统计。当前刷题数据统计范围为全部题库，不随学习目标筛选变化。
         {goalSelected ? " 你正在查看某一个学习目标，下面的数字仍然是全部题目。" : ""}
       </p>
@@ -24,12 +24,12 @@ export function PracticeGrowth({ practice, goalSelected }: { practice: GrowthRep
           ["已提交题目", String(practice.submitted_problem_count)],
         ].map(([label, value]) => (
           <div key={label} className="rounded-2xl bg-mist px-4 py-3">
-            <dt className="text-xs text-slate-500">{label}</dt>
+            <dt className="text-xs text-muted">{label}</dt>
             <dd className="mt-1 text-sm font-medium">{value}</dd>
           </div>
         ))}
       </dl>
-      <p className="mt-3 text-xs leading-5 text-slate-500">
+      <p className="mt-3 text-xs leading-5 text-muted">
         {practice.pass_rate_note} {practice.duration_note} 自评完成不是正式通过。系统异常单独列出，不算用户答错。尚未判题不算通过或失败。
       </p>
       <button type="button" onClick={() => setOpen((value) => !value)} className="mt-3 text-sm font-medium text-accent">
@@ -38,7 +38,7 @@ export function PracticeGrowth({ practice, goalSelected }: { practice: GrowthRep
       {open ? (
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {judgeCountLabels.map(([key, label]) => (
-            <li key={key} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-2 text-sm">
+            <li key={key} className="flex items-center justify-between rounded-2xl border border-line px-4 py-2 text-sm">
               <span>{label}</span>
               <span className="font-medium">{counts[key]} 次</span>
             </li>

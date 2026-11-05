@@ -36,21 +36,21 @@ export function ProgressPage() {
       <header>
         <p className="text-sm font-medium text-accent">学习记录</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">学习成长档案</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
           这些数字来自已经保存的任务、检测、复习和判题记录。打开页面只读取数据，不会生成计划，也不会调用模型。
         </p>
       </header>
 
-      <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 md:flex-row md:items-end md:justify-between">
+      <div className="flex flex-col gap-3 rounded-3xl border border-line bg-surface p-4 md:flex-row md:items-end md:justify-between">
         <label className="text-sm">
-          <span className="text-slate-500">学习目标</span>
+          <span className="text-muted">学习目标</span>
           <select
             value={goalId ?? ""}
             onChange={(event) => {
               setGoalId(event.target.value ? Number(event.target.value) : null);
               setPointId(null);
             }}
-            className="mt-1 block w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 md:w-64"
+            className="mt-1 block w-full rounded-2xl border border-line bg-surface px-3 py-2 md:w-64"
           >
             <option value="">全部目标</option>
             {(goals.goals ?? []).map((goal) => (
@@ -61,11 +61,11 @@ export function ProgressPage() {
           </select>
         </label>
         <label className="text-sm">
-          <span className="text-slate-500">知识点</span>
+          <span className="text-muted">知识点</span>
           <select
             value={pointId ?? ""}
             onChange={(event) => setPointId(event.target.value ? Number(event.target.value) : null)}
-            className="mt-1 block w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 md:w-64"
+            className="mt-1 block w-full rounded-2xl border border-line bg-surface px-3 py-2 md:w-64"
           >
             <option value="">全部知识点</option>
             {points.map((point) => (
@@ -76,14 +76,14 @@ export function ProgressPage() {
           </select>
         </label>
         <div>
-          <p className="text-sm text-slate-500">活动范围</p>
+          <p className="text-sm text-muted">活动范围</p>
           <div className="mt-1 flex gap-2">
             {dayChoices.map((choice) => (
               <button
                 key={choice}
                 type="button"
                 onClick={() => setDays(choice)}
-                className={`rounded-full px-3 py-1.5 text-sm ${days === choice ? "bg-accent text-white" : "bg-mist text-slate-600"}`}
+                className={`rounded-full px-3 py-1.5 text-sm ${days === choice ? "bg-accent text-on-accent" : "bg-mist text-muted"}`}
               >
                 近 {choice} 天
               </button>

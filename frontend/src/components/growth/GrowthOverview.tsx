@@ -21,22 +21,22 @@ export function GrowthOverview({ summary, goalSelected }: { summary: GrowthSumma
     <div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {primary.map(([label, value, note]) => (
-          <div key={label} className="rounded-3xl bg-ink px-5 py-4 text-white">
-            <p className="text-sm text-slate-300">{label}</p>
+          <div key={label} className="rounded-3xl bg-accent px-5 py-4 text-on-accent">
+            <p className="text-sm text-on-accent/70">{label}</p>
             <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
-            <p className="mt-2 text-xs leading-5 text-slate-400">{note}</p>
+            <p className="mt-2 text-xs leading-5 text-on-accent/70">{note}</p>
           </div>
         ))}
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
         {secondary.map(([label, value]) => (
           <div key={label} className="rounded-2xl bg-mist px-4 py-3">
-            <dt className="text-xs text-slate-500">{label}</dt>
+            <dt className="text-xs text-muted">{label}</dt>
             <dd className="mt-1 text-sm font-medium">{value}</dd>
           </div>
         ))}
       </dl>
-      <p className="mt-3 text-xs leading-5 text-slate-500">
+      <p className="mt-3 text-xs leading-5 text-muted">
         本地判题通过率的分母不含系统异常和尚未判题。自评完成不算正式通过。这里的通过是本地测试通过。
         {summary.pass_rate_denominator > 0 ? ` 当前 ${summary.pass_rate_numerator}/${summary.pass_rate_denominator}。` : ""}
       </p>

@@ -12,4 +12,5 @@ IMAGE = os.getenv("JUDGE_IMAGE", "studymate-judge:1")
 TMPFS_SIZE = os.getenv("JUDGE_TMPFS_SIZE", "64m")
 
 DOCKER_MISSING_MESSAGE = "未检测到 Docker。请安装并启动 Docker Desktop 后再判题。系统不会在本机直接运行代码。"
+DOCKER_NOT_RUNNING_MESSAGE = "Docker 已安装，但引擎还没有启动。请打开 Docker Desktop，等到引擎就绪后再判题。系统不会在本机直接运行代码。"
 IMAGE_MISSING_MESSAGE = "判题镜像不存在。请在 backend 目录执行：docker build -t studymate-judge:1 judge。系统不会在本机直接运行代码。"

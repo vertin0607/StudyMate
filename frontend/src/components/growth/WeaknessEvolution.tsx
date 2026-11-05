@@ -27,7 +27,7 @@ export function WeaknessEvolution({
   ];
   return (
     <div className="space-y-6">
-      <p className="text-sm leading-6 text-slate-500">{note} 完成训练建议不会把薄弱点标成已改善。</p>
+      <p className="text-sm leading-6 text-muted">{note} 完成训练建议不会把薄弱点标成已改善。</p>
       <Group title="持续存在的薄弱点" empty="目前没有已确认、初步发现，或最近一次仍未通过的记录。">
         {ongoingCards}
       </Group>
@@ -38,7 +38,7 @@ export function WeaknessEvolution({
       </Group>
       <Group title="证据不足" empty="没有证据不足的诊断项。">
         {unknown.length > 0 ? (
-          <details className="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+          <details className="rounded-2xl border border-line px-4 py-3 text-sm">
             <summary className="cursor-pointer font-medium">证据不足 {unknown.length} 项</summary>
             <ul className="mt-3 space-y-3">
               {unknown.map((item, index) => (
@@ -58,7 +58,7 @@ function Group({ title, empty, children }: { title: string; empty: string; child
   return (
     <div>
       <h3 className="text-sm font-semibold">{title}</h3>
-      {present ? <div className="mt-2 space-y-2">{children}</div> : <p className="mt-2 text-sm text-slate-500">{empty}</p>}
+      {present ? <div className="mt-2 space-y-2">{children}</div> : <p className="mt-2 text-sm text-muted">{empty}</p>}
     </div>
   );
 }
@@ -67,12 +67,12 @@ function DiagnosisCard({ item }: { item: DiagnosisItem }) {
   const [open, setOpen] = useState(false);
   const name = item.knowledge_point_name || item.problem_topics.map((topic) => topic.name).join("、") || "未命名";
   return (
-    <article className="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+    <article className="rounded-2xl border border-line px-4 py-3 text-sm">
       <p className="font-medium">{name}</p>
-      <p className="mt-1 text-slate-500">
+      <p className="mt-1 text-muted">
         {categoryLabels[item.category] ?? item.category} · {diagnosisStatusLabels[item.status] ?? item.status}
       </p>
-      <p className="mt-2 leading-6 text-slate-600">{item.reason}</p>
+      <p className="mt-2 leading-6 text-muted">{item.reason}</p>
       <button type="button" onClick={() => setOpen((value) => !value)} className="mt-2 font-medium text-accent">
         {open ? "收起证据" : "查看证据"}
       </button>
@@ -85,17 +85,17 @@ function ChangeCard({ item }: { item: GrowthChange }) {
   const same = item.earlier.id === item.later.id && item.earlier.source === item.later.source;
   const improved = item.status === "improved";
   return (
-    <article className="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+    <article className="rounded-2xl border border-line px-4 py-3 text-sm">
       <p className="font-medium">{item.name}</p>
-      <p className="mt-1 text-slate-500">
+      <p className="mt-1 text-muted">
         {item.subject === "problem" ? "同一道题" : "同一个知识点"} · {improved ? "已改善" : "最近一次仍未通过"}
       </p>
       {same && !improved ? (
-        <p className="mt-2 leading-6 text-slate-600">目前的失败记录：{describeEvidence(item.later)} 最近一次结果仍未通过，所以不算已改善。</p>
+        <p className="mt-2 leading-6 text-muted">目前的失败记录：{describeEvidence(item.later)} 最近一次结果仍未通过，所以不算已改善。</p>
       ) : (
         <>
-          <p className="mt-2 leading-6 text-slate-600">之前：{describeEvidence(item.earlier)}</p>
-          <p className="mt-1 leading-6 text-slate-600">{improved ? "之后" : "最近一次"}：{describeEvidence(item.later)}</p>
+          <p className="mt-2 leading-6 text-muted">之前：{describeEvidence(item.earlier)}</p>
+          <p className="mt-1 leading-6 text-muted">{improved ? "之后" : "最近一次"}：{describeEvidence(item.later)}</p>
         </>
       )}
       {item.problem_id ? (
@@ -109,12 +109,12 @@ function ChangeCard({ item }: { item: GrowthChange }) {
 
 function EvidenceList({ evidence }: { evidence: DiagnosisEvidence[] }) {
   if (evidence.length === 0) {
-    return <p className="mt-2 text-slate-500">这条诊断没有附带证据明细。</p>;
+    return <p className="mt-2 text-muted">这条诊断没有附带证据明细。</p>;
   }
   return (
     <ul className="mt-2 space-y-2">
       {evidence.map((item, index) => (
-        <li key={`${item.type ?? "evidence"}-${index}`} className="rounded-xl bg-mist px-3 py-2 leading-6 text-slate-600">
+        <li key={`${item.type ?? "evidence"}-${index}`} className="rounded-xl bg-mist px-3 py-2 leading-6 text-muted">
           <p>{describeDiagnosisEvidence(item)}</p>
           {typeof item.problem_id === "number" ? (
             <Link to={`/problems/${item.problem_id}`} className="font-medium text-accent">

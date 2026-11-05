@@ -144,6 +144,49 @@ def test_runtime_timeout_and_spacing(monkeypatch) -> None:
     assert body["status"] != "wrong_answer"
 
 
+def test_system_error_can_be_retried_after_environment_recovers(monkeypatch) -> None:
+    calls = {"n": 0}
+
+    def fake(_source: str, inputs: list[str]) -> ProgramExecution:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise docker_runner.JudgeEnvironmentError("Docker 已安装，但引擎还没有启动。")
+        return _echo(inputs, wrong=False)
+
+    monkeypatch.setattr("app.services.judge.judge_service.run_program", fake)
+    problem_id = client.post("/api/problems/import", json=problem_body(source_problem_id="9006")).json()["problem"]["id"]
+    submission_id = client.post(f"/api/problems/{problem_id}/submissions", json={"source_code": "int main(){return 0;}"}).json()["id"]
+    client.post(f"/api/submissions/{submission_id}/judge")
+    assert client.get(f"/api/submissions/{submission_id}/judge-result").json()["status"] == "system_error"
+    client.post(f"/api/submissions/{submission_id}/judge")
+    assert client.get(f"/api/submissions/{submission_id}/judge-result").json()["status"] == "accepted"
+    assert calls["n"] == 2
+
+
+def test_stopped_engine_is_not_reported_as_missing_image(monkeypatch) -> None:
+    import subprocess
+
+    def fake_run(args, **_kwargs):
+        if len(args) >= 2 and args[1] == "info":
+            return subprocess.CompletedProcess(
+                args,
+                1,
+                b"",
+                b"failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine",
+            )
+        raise AssertionError("引擎未启动时不能继续启动容器")
+
+    monkeypatch.setattr("app.services.judge.docker_runner.find_docker", lambda: "docker")
+    monkeypatch.setattr("app.services.judge.docker_runner.subprocess.run", fake_run)
+    problem_id = client.post("/api/problems/import", json=problem_body(source_problem_id="9007")).json()["problem"]["id"]
+    submission_id = client.post(f"/api/problems/{problem_id}/submissions", json={"source_code": "int main(){return 0;}"}).json()["id"]
+    client.post(f"/api/submissions/{submission_id}/judge")
+    result = client.get(f"/api/submissions/{submission_id}/judge-result").json()
+    assert result["status"] == "system_error"
+    assert "引擎还没有启动" in result["error_message"]
+    assert "镜像不存在" not in result["error_message"]
+
+
 def test_missing_docker_is_system_error_and_does_not_run_code(monkeypatch) -> None:
     def blocked(*_args, **_kwargs):
         raise AssertionError("没有 Docker 时不能启动进程")

@@ -10,6 +10,7 @@ from pathlib import Path
 from app.services.judge.config import (
     CPUS,
     DOCKER_MISSING_MESSAGE,
+    DOCKER_NOT_RUNNING_MESSAGE,
     IMAGE,
     IMAGE_MISSING_MESSAGE,
     MEMORY_MB,
@@ -23,6 +24,13 @@ MAGIC = b"SMJ1"
 WINDOWS_DOCKER_CANDIDATES = (
     Path(r"C:\Program Files\Docker\Docker\resources\bin\docker.exe"),
     Path.home() / "AppData" / "Local" / "Programs" / "DockerDesktop" / "resources" / "bin" / "docker.exe",
+)
+DAEMON_HINTS = (
+    "dockerDesktopLinuxEngine",
+    "Is the docker daemon running",
+    "failed to connect to the docker API",
+    "Cannot connect to the Docker daemon",
+    "error during connect",
 )
 
 
@@ -103,6 +111,7 @@ def run_program(source: str, inputs: list[str]) -> ProgramExecution:
     docker = find_docker()
     if not docker:
         raise JudgeEnvironmentError(DOCKER_MISSING_MESSAGE)
+    _ensure_engine(docker)
     if not _image_exists(docker):
         raise JudgeEnvironmentError(IMAGE_MISSING_MESSAGE)
     name = f"studymate-judge-{uuid.uuid4().hex[:12]}"
@@ -124,15 +133,39 @@ def run_program(source: str, inputs: list[str]) -> ProgramExecution:
         raise JudgeEnvironmentError(DOCKER_MISSING_MESSAGE) from None
     if completed.returncode != 0:
         detail = completed.stderr.decode("utf-8", "replace")
+        if _daemon_unavailable(detail):
+            raise JudgeEnvironmentError(DOCKER_NOT_RUNNING_MESSAGE)
         if "No such image" in detail or "Unable to find image" in detail:
             raise JudgeEnvironmentError(IMAGE_MISSING_MESSAGE)
         raise JudgeEnvironmentError("判题容器异常退出")
     return _parse(completed.stdout)
 
 
+def _ensure_engine(docker: str) -> None:
+    try:
+        completed = subprocess.run([docker, "info"], capture_output=True, timeout=12, check=False)
+    except subprocess.TimeoutExpired as exc:
+        raise JudgeEnvironmentError(DOCKER_NOT_RUNNING_MESSAGE) from exc
+    if completed.returncode == 0:
+        return
+    detail = completed.stderr.decode("utf-8", "replace") + completed.stdout.decode("utf-8", "replace")
+    if _daemon_unavailable(detail):
+        raise JudgeEnvironmentError(DOCKER_NOT_RUNNING_MESSAGE)
+    raise JudgeEnvironmentError(DOCKER_MISSING_MESSAGE)
+
+
+def _daemon_unavailable(detail: str) -> bool:
+    return any(hint in detail for hint in DAEMON_HINTS)
+
+
 def _image_exists(docker: str) -> bool:
     completed = subprocess.run([docker, "image", "inspect", IMAGE], capture_output=True, check=False)
-    return completed.returncode == 0
+    if completed.returncode == 0:
+        return True
+    detail = completed.stderr.decode("utf-8", "replace")
+    if _daemon_unavailable(detail):
+        raise JudgeEnvironmentError(DOCKER_NOT_RUNNING_MESSAGE)
+    return False
 
 
 def _pack(source: bytes, inputs: list[bytes]) -> bytes:

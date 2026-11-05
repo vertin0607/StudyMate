@@ -16,23 +16,23 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   return (
-    <div className="fixed inset-0 z-20 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+    <div className="fixed inset-0 z-20 flex items-end justify-center bg-overlay p-4 sm:items-center">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
-        className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl"
+        className="w-full max-w-md rounded-3xl bg-surface p-6 shadow-xl"
       >
         <h2 id="confirm-title" className="text-xl font-semibold tracking-tight">
           {title}
         </h2>
-        <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+        <p className="mt-3 text-sm leading-6 text-muted">{description}</p>
         <div className="mt-6 flex flex-wrap justify-end gap-3">
           <button
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600"
+            className="rounded-full border border-line px-4 py-2 text-sm font-medium text-muted"
           >
             取消
           </button>

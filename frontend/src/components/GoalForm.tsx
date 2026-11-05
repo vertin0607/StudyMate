@@ -45,7 +45,7 @@ function validate(form: FormState): string | null {
 }
 
 const fieldClass =
-  "mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent";
+  "mt-2 w-full rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none transition focus:border-accent";
 
 export function GoalForm({ initial, submitLabel, submitting, error, onSubmit, onCancel }: GoalFormProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(initial));
@@ -70,9 +70,9 @@ export function GoalForm({ initial, submitLabel, submitting, error, onSubmit, on
   const visibleError = localError ?? error;
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <form onSubmit={handleSubmit} className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
       <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-sm font-medium text-slate-700 md:col-span-2">
+        <label className="block text-sm font-medium text-ink md:col-span-2">
           学习目标名称
           <input
             value={form.title}
@@ -82,7 +82,7 @@ export function GoalForm({ initial, submitLabel, submitting, error, onSubmit, on
             placeholder="例如：DeCLIP 研究学习"
           />
         </label>
-        <label className="block text-sm font-medium text-slate-700 md:col-span-2">
+        <label className="block text-sm font-medium text-ink md:col-span-2">
           目标描述
           <textarea
             value={form.description}
@@ -93,7 +93,7 @@ export function GoalForm({ initial, submitLabel, submitting, error, onSubmit, on
             placeholder="写下你希望学会什么"
           />
         </label>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink">
           预计完成日期
           <input
             type="date"
@@ -102,7 +102,7 @@ export function GoalForm({ initial, submitLabel, submitting, error, onSubmit, on
             className={fieldClass}
           />
         </label>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink">
           每日学习时间（分钟）
           <input
             type="number"
@@ -125,7 +125,7 @@ export function GoalForm({ initial, submitLabel, submitting, error, onSubmit, on
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "正在保存…" : submitLabel}
         </button>
@@ -133,7 +133,7 @@ export function GoalForm({ initial, submitLabel, submitting, error, onSubmit, on
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+          className="rounded-full border border-line px-4 py-2 text-sm font-medium text-muted transition hover:bg-soft disabled:opacity-60"
         >
           取消
         </button>

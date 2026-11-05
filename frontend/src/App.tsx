@@ -18,6 +18,7 @@ import { ProgressPage } from "./pages/ProgressPage.tsx";
 import { QuizPage } from "./pages/QuizPage.tsx";
 import { ReviewDetailPage } from "./pages/ReviewDetailPage.tsx";
 import { ReviewsPage } from "./pages/ReviewsPage.tsx";
+import { SettingsPage } from "./pages/SettingsPage.tsx";
 import { TutorPage } from "./pages/TutorPage.tsx";
 
 export default function App() {
@@ -65,16 +66,7 @@ export default function App() {
             />
           }
         />
-        <Route
-          path="/settings"
-          element={
-            <PlaceholderPage
-              title="设置"
-              phase="后续阶段"
-              summary="模型名称和 API 地址放在后端环境变量中。这个页面不会读取或保存密钥。"
-            />
-          }
-        />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
       </Route>
     </Routes>
