@@ -4,7 +4,7 @@ import type { HealthStatus } from "../types/health.ts";
 
 /**
  * 所有接口都请求 StudyMate 后端。
- * 开发环境下 Vite 会把 /api 代理到 127.0.0.1:8000。
+ * 开发环境下 Vite 会把 /api 代理到运行 StudyMate 的那台电脑上的后端。
  * 登录凭证只放在 HttpOnly Cookie 里，这里只读取 CSRF Cookie。
  */
 export const api = axios.create({

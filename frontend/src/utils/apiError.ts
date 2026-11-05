@@ -11,7 +11,7 @@ export function getErrorMessage(error: unknown, fallback: string): string {
       return detail;
     }
     if (!error.response) {
-      return "无法连接后端。请确认 FastAPI 已在 127.0.0.1:8000 启动。";
+      return "无法连接后端。请确认运行 StudyMate 的电脑上，后端已经启动。";
     }
   }
   return fallback;

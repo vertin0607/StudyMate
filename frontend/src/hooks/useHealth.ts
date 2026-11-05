@@ -4,7 +4,7 @@ import { fetchHealth } from "../services/api.ts";
 import type { HealthStatus } from "../types/health.ts";
 
 const connectionError =
-  "后端健康检查失败。请确认 FastAPI 已在 127.0.0.1:8000 启动，并查看后端终端中的报错。";
+  "后端健康检查失败。请确认运行 StudyMate 的电脑上，后端已经启动，并查看后端终端中的报错。";
 
 export function useHealth() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
