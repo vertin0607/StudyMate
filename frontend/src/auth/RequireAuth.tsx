@@ -6,13 +6,13 @@ import { safeNextPath } from "./paths.ts";
 export function AuthStatus({ message, action }: { message: string; action?: { label: string; onClick: () => void } }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-mist px-4">
-      <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <p className="text-sm text-slate-600">{message}</p>
+      <div className="w-full max-w-sm rounded-3xl border border-line bg-surface p-8 text-center shadow-sm">
+        <p className="text-sm text-muted">{message}</p>
         {action ? (
           <button
             type="button"
             onClick={action.onClick}
-            className="mt-5 rounded-2xl bg-accent px-4 py-2 text-sm font-medium text-white"
+            className="mt-5 rounded-2xl bg-accent px-4 py-2 text-sm font-medium text-on-accent"
           >
             {action.label}
           </button>

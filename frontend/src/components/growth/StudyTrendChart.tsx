@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { useChartPalette } from "../../themes/useChartPalette.ts";
 import type { GrowthDay } from "../../types/growth.ts";
 import { formatDate } from "../../utils/format.ts";
 import { formatPracticeDuration } from "../../utils/growthDisplay.ts";
@@ -16,6 +17,7 @@ const metrics: { key: Metric; label: string; unit: string; library: boolean }[] 
 ];
 
 export function StudyTrendChart({ studySeries, practiceSeries, goalSelected }: { studySeries: GrowthDay[]; practiceSeries: GrowthDay[]; goalSelected: boolean }) {
+  const palette = useChartPalette();
   const [metric, setMetric] = useState<Metric>("completed_task_count");
   const selected = metrics.find((item) => item.key === metric) ?? metrics[0];
   const source = selected.library ? practiceSeries : studySeries;
@@ -39,22 +41,22 @@ export function StudyTrendChart({ studySeries, practiceSeries, goalSelected }: {
             key={item.key}
             type="button"
             onClick={() => setMetric(item.key)}
-            className={`rounded-full px-3 py-1.5 text-sm ${metric === item.key ? "bg-ink text-white" : "bg-mist text-slate-600"}`}
+            className={`rounded-full px-3 py-1.5 text-sm ${metric === item.key ? "bg-accent text-on-accent" : "bg-mist text-muted"}`}
           >
             {item.label}
           </button>
         ))}
       </div>
-      <p className="mt-3 text-xs leading-5 text-slate-500">
+      <p className="mt-3 text-xs leading-5 text-muted">
         横轴是连续的本地日期，纵轴是{selected.label}（{selected.unit}）。没有活动的日期不画成 0。
         {selected.library ? " 提交次数和实际练习时长统计全部题库。" : goalSelected ? " 这项随当前学习目标变化。" : " 这项包含全部学习目标。"}
       </p>
       <div className="mt-4 h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows}>
-            <CartesianGrid stroke="#e2e8f0" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={36} label={{ value: selected.unit, angle: -90, position: "insideLeft", fontSize: 11 }} />
+            <CartesianGrid stroke={palette.grid} vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: palette.tick }} interval="preserveStartEnd" />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: palette.tick }} width={36} label={{ value: selected.unit, angle: -90, position: "insideLeft", fontSize: 11, fill: palette.tick }} />
             <Tooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.[0]) {
@@ -68,7 +70,7 @@ export function StudyTrendChart({ studySeries, practiceSeries, goalSelected }: {
                   text = row.durationText;
                 }
                 return (
-                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs">
+                  <div className="rounded-xl border border-line bg-surface px-3 py-2 text-xs">
                     <p>{formatDate(row.date)}</p>
                     <p className="mt-1 font-medium">
                       {selected.label}：{text}
@@ -77,7 +79,7 @@ export function StudyTrendChart({ studySeries, practiceSeries, goalSelected }: {
                 );
               }}
             />
-            <Bar dataKey="value" name={selected.label} fill="#0f766e" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="value" name={selected.label} fill={palette.bar} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

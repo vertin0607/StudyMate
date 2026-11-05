@@ -256,28 +256,28 @@ export function ProblemWorkspace({ problemId }: { problemId: number }) {
     return <p className="text-sm text-rose-700">{loadError}</p>;
   }
   if (readyCode === null) {
-    return <p className="text-sm text-slate-500">正在读取代码草稿…</p>;
+    return <p className="text-sm text-muted">正在读取代码草稿…</p>;
   }
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5">
+    <section className="rounded-3xl border border-line bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">开始做题</h2>
-          <p className="mt-1 text-sm text-slate-500">C++ 草稿会自动保存。提交后在隔离环境里编译运行，不会改掉编辑器或以前的提交。</p>
+          <p className="mt-1 text-sm text-muted">C++ 草稿会自动保存。提交后在隔离环境里编译运行，不会改掉编辑器或以前的提交。</p>
         </div>
-        <p className={`text-sm ${phase === "failed" ? "text-rose-700" : "text-slate-500"}`}>
+        <p className={`text-sm ${phase === "failed" ? "text-rose-700" : "text-muted"}`}>
           {usingTemplate ? "尚未保存" : phaseLabel[phase]}
         </p>
       </div>
       {actionError && <p className="mt-3 text-sm text-rose-700">{actionError}</p>}
       {notice && <p className="mt-3 text-sm text-accent">{notice}</p>}
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={() => void copyCode()} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm">复制</button>
-        <button type="button" onClick={() => viewRef.current && selectEditorCode(viewRef.current)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm">全选</button>
-        <button type="button" onClick={() => applyCode("")} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm">清空</button>
-        <button type="button" onClick={() => applyCode(CPP_TEMPLATE)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm">恢复默认模板</button>
-        <button type="button" onClick={() => void saveNow()} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm">保存草稿</button>
+        <button type="button" onClick={() => void copyCode()} className="rounded-full border border-line px-3 py-1.5 text-sm">复制</button>
+        <button type="button" onClick={() => viewRef.current && selectEditorCode(viewRef.current)} className="rounded-full border border-line px-3 py-1.5 text-sm">全选</button>
+        <button type="button" onClick={() => applyCode("")} className="rounded-full border border-line px-3 py-1.5 text-sm">清空</button>
+        <button type="button" onClick={() => applyCode(CPP_TEMPLATE)} className="rounded-full border border-line px-3 py-1.5 text-sm">恢复默认模板</button>
+        <button type="button" onClick={() => void saveNow()} className="rounded-full border border-line px-3 py-1.5 text-sm">保存草稿</button>
         <button
           type="button"
           onClick={() => {
@@ -289,7 +289,7 @@ export function ProblemWorkspace({ problemId }: { problemId: number }) {
             setConfirmSubmit(true);
           }}
           disabled={submitting}
-          className="rounded-full bg-ink px-3 py-1.5 text-sm text-white disabled:opacity-60"
+          className="rounded-full bg-accent px-3 py-1.5 text-sm text-on-accent disabled:opacity-60"
         >
           {submitting ? "正在提交…" : "提交代码"}
         </button>
@@ -305,9 +305,9 @@ export function ProblemWorkspace({ problemId }: { problemId: number }) {
       </div>
       <div className="mt-6">
         <h3 className="text-base font-semibold">提交记录</h3>
-        <p className="mt-1 text-sm text-slate-500">历史代码只读。修改上面的草稿不会改变这些记录。</p>
+        <p className="mt-1 text-sm text-muted">历史代码只读。修改上面的草稿不会改变这些记录。</p>
         {history.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">还没有提交。</p>
+          <p className="mt-3 text-sm text-muted">还没有提交。</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {history.map((item) => (
@@ -315,32 +315,32 @@ export function ProblemWorkspace({ problemId }: { problemId: number }) {
                 <button
                   type="button"
                   onClick={() => void openSubmission(item.id)}
-                  className="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                  className="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border border-line px-3 py-2 text-left text-sm hover:bg-soft"
                 >
                   <span>#{item.id} · C++ · {item.code_length} 字符</span>
-                  <span className="text-slate-500">{formatServerTime(item.submitted_at)} · {judgeStatusLabel(item.status)}</span>
+                  <span className="text-muted">{formatServerTime(item.submitted_at)} · {judgeStatusLabel(item.status)}</span>
                 </button>
               </li>
             ))}
           </ul>
         )}
-        {openingId !== null && <p className="mt-3 text-sm text-slate-500">正在读取提交 #{openingId}…</p>}
+        {openingId !== null && <p className="mt-3 text-sm text-muted">正在读取提交 #{openingId}…</p>}
         {opened && (
           <div className="mt-3">
-            <p className="text-sm text-slate-600">提交 #{opened.id} 的代码，只读。{judgeStatusLabel(opened.status)}</p>
+            <p className="text-sm text-muted">提交 #{opened.id} 的代码，只读。{judgeStatusLabel(opened.status)}</p>
             <pre className="io-block mt-2 max-h-72 overflow-auto">{opened.source_code}</pre>
           </div>
         )}
         {judge && <JudgePanel problemId={problemId} result={judge} showCases={showCases} analyzing={analyzing} onToggle={() => setShowCases((value) => !value)} onAnalyze={() => void analyze()} onWrong={() => void markWrong()} />}
       </div>
       {confirmSubmit && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-overlay p-4 sm:items-center">
+          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-3xl bg-surface p-6 shadow-xl">
             <h3 className="text-xl font-semibold">提交当前代码</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600">会新增一条提交记录，并在隔离环境中编译运行。编辑器里的草稿会保留，之前的提交也不会被覆盖。是否正确由测试数据决定。</p>
+            <p className="mt-3 text-sm leading-6 text-muted">会新增一条提交记录，并在隔离环境中编译运行。编辑器里的草稿会保留，之前的提交也不会被覆盖。是否正确由测试数据决定。</p>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
-              <button type="button" onClick={() => setConfirmSubmit(false)} disabled={submitting} className="rounded-full border border-slate-200 px-4 py-2 text-sm">取消</button>
-              <button type="button" onClick={() => void submit()} disabled={submitting} className="rounded-full bg-ink px-4 py-2 text-sm text-white disabled:opacity-60">
+              <button type="button" onClick={() => setConfirmSubmit(false)} disabled={submitting} className="rounded-full border border-line px-4 py-2 text-sm">取消</button>
+              <button type="button" onClick={() => void submit()} disabled={submitting} className="rounded-full bg-accent px-4 py-2 text-sm text-on-accent disabled:opacity-60">
                 {submitting ? "正在提交…" : "确认提交"}
               </button>
             </div>
@@ -371,46 +371,46 @@ function JudgePanel({
   onWrong: () => void;
 }) {
   return (
-    <div className="mt-4 rounded-2xl border border-slate-200 p-4">
+    <div className="mt-4 rounded-2xl border border-line p-4">
       <p className="text-base font-semibold">{judgeStatusLabel(result.status)}</p>
-      <p className="mt-2 text-sm text-slate-600">通过 {result.passed_cases} / {result.total_cases} 组测试 · 执行时间 {result.execution_time_ms} ms · 内存 {result.memory_used_kb > 0 ? `${result.memory_used_kb} KB` : "本次没有取得内存数据"}</p>
-      {result.error_message && <p className="mt-2 text-sm text-slate-700">{result.error_message}</p>}
+      <p className="mt-2 text-sm text-muted">通过 {result.passed_cases} / {result.total_cases} 组测试 · 执行时间 {result.execution_time_ms} ms · 内存 {result.memory_used_kb > 0 ? `${result.memory_used_kb} KB` : "本次没有取得内存数据"}</p>
+      {result.error_message && <p className="mt-2 text-sm text-ink">{result.error_message}</p>}
       {result.compile_output && <pre className="io-block mt-2 max-h-48 overflow-auto">{result.compile_output}</pre>}
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={onToggle} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm">{showCases ? "收起详细信息" : "查看详细信息"}</button>
+        <button type="button" onClick={onToggle} className="rounded-full border border-line px-3 py-1.5 text-sm">{showCases ? "收起详细信息" : "查看详细信息"}</button>
         {explainable.has(result.status) && (
-          <button type="button" onClick={onAnalyze} disabled={analyzing} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm disabled:opacity-60">
+          <button type="button" onClick={onAnalyze} disabled={analyzing} className="rounded-full border border-line px-3 py-1.5 text-sm disabled:opacity-60">
             {analyzing ? "正在分析…" : "AI 分析错误"}
           </button>
         )}
         {explainable.has(result.status) && (
-          <button type="button" onClick={onWrong} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm">加入错题</button>
+          <button type="button" onClick={onWrong} className="rounded-full border border-line px-3 py-1.5 text-sm">加入错题</button>
         )}
       </div>
       {showCases && (
         <ul className="mt-3 space-y-3">
           {(result.cases ?? []).map((item, index) => (
-            <li key={item.id} className="rounded-2xl bg-slate-50 p-3 text-sm">
+            <li key={item.id} className="rounded-2xl bg-soft p-3 text-sm">
               <p>第 {index + 1} 组 · {judgeStatusLabel(item.status)} · {item.execution_time_ms} ms</p>
-              {item.error_message && <p className="mt-1 text-slate-600">{item.error_message}</p>}
-              <p className="mt-2 text-slate-500">预期输出</p>
+              {item.error_message && <p className="mt-1 text-muted">{item.error_message}</p>}
+              <p className="mt-2 text-muted">预期输出</p>
               <pre className="io-block mt-1">{item.expected_output || "（空）"}</pre>
-              <p className="mt-2 text-slate-500">实际输出</p>
+              <p className="mt-2 text-muted">实际输出</p>
               <pre className="io-block mt-1">{item.actual_output || "（空）"}</pre>
             </li>
           ))}
-          {(result.cases ?? []).length === 0 && <li className="text-sm text-slate-500">没有可展示的测试结果。</li>}
+          {(result.cases ?? []).length === 0 && <li className="text-sm text-muted">没有可展示的测试结果。</li>}
         </ul>
       )}
       {result.ai_analysis && (
-        <div className="mt-4 space-y-2 text-sm leading-6 text-slate-700">
+        <div className="mt-4 space-y-2 text-sm leading-6 text-ink">
           <p><span className="font-medium">可能原因：</span>{result.ai_analysis.likely_cause}</p>
           <p><span className="font-medium">位置：</span>{result.ai_analysis.location}</p>
           <p><span className="font-medium">解释：</span>{result.ai_analysis.explanation}</p>
           <p><span className="font-medium">修改方向：</span>{result.ai_analysis.direction}</p>
           <pre className="io-block">{result.ai_analysis.patch_example}</pre>
-          <p className="text-slate-500">{result.ai_analysis.confidence_note}</p>
-          <p className="text-xs text-slate-400">题目 #{problemId} 的这段分析不会写回编辑器。</p>
+          <p className="text-muted">{result.ai_analysis.confidence_note}</p>
+          <p className="text-xs text-muted">题目 #{problemId} 的这段分析不会写回编辑器。</p>
         </div>
       )}
       {result.ai_analysis_error && <p className="mt-3 text-sm text-rose-700">{result.ai_analysis_error}</p>}

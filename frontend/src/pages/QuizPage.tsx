@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { QuestionExplain } from "../components/QuestionExplain.tsx";
 import { fetchQuiz, isQuizResult, submitQuiz } from "../services/quizzes.ts";
 import type { QuestionType, QuizPaper, QuizResult } from "../types/quiz.ts";
 import { getErrorMessage } from "../utils/apiError.ts";
@@ -110,14 +111,14 @@ export function QuizPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <p className="text-sm font-medium text-accent">知识检测</p>
+      <p className="text-sm font-medium text-accent">{(result?.task_id ?? paper?.task_id) == null && (result || paper) ? "复习检测" : "知识检测"}</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">{result?.title ?? paper?.title ?? "本次检测"}</h1>
-      {loading && <p className="mt-6 text-sm text-slate-500">正在读取题目…</p>}
+      {loading && <p className="mt-6 text-sm text-muted">正在读取题目…</p>}
       {error && !submitting && <p className="mt-4 text-sm text-rose-700">{error}</p>}
       {result && <ResultView result={result} />}
       {paper && current && !result && !reviewing && (
         <section className="mt-6">
-          <div className="flex items-center justify-between text-sm text-slate-500">
+          <div className="flex items-center justify-between text-sm text-muted">
             <span>
               {index + 1}/{questions.length}
             </span>
@@ -125,11 +126,11 @@ export function QuizPage() {
               {typeLabels[current.question_type]} · {difficultyLabels[current.difficulty]}
             </span>
           </div>
-          <div className="mt-3 h-2 rounded-full bg-slate-100">
+          <div className="mt-3 h-2 rounded-full bg-soft">
             <div className="h-2 rounded-full bg-accent" style={{ width: `${((index + 1) / questions.length) * 100}%` }} />
           </div>
-          <article className="mt-5 rounded-3xl border border-slate-200 bg-white p-5">
-            <p className="text-sm text-slate-500">{current.knowledge_point_name}</p>
+          <article className="mt-5 rounded-3xl border border-line bg-surface p-5">
+            <p className="text-sm text-muted">{current.knowledge_point_name}</p>
             <h2 className="mt-2 text-xl font-semibold leading-8">{current.stem}</h2>
             <AnswerEditor
               questionId={current.id}
@@ -141,15 +142,15 @@ export function QuizPage() {
             />
           </article>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" disabled={index === 0} onClick={() => setIndex((value) => value - 1)} className="rounded-full border border-slate-200 px-4 py-2 text-sm disabled:opacity-40">
+            <button type="button" disabled={index === 0} onClick={() => setIndex((value) => value - 1)} className="rounded-full border border-line px-4 py-2 text-sm disabled:opacity-40">
               上一题
             </button>
             {index < questions.length - 1 ? (
-              <button type="button" onClick={() => setIndex((value) => value + 1)} className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white">
+              <button type="button" onClick={() => setIndex((value) => value + 1)} className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent">
                 下一题
               </button>
             ) : (
-              <button type="button" onClick={() => setReviewing(true)} className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white">
+              <button type="button" onClick={() => setReviewing(true)} className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent">
                 检查答案
               </button>
             )}
@@ -157,7 +158,7 @@ export function QuizPage() {
         </section>
       )}
       {paper && reviewing && !result && (
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5">
+        <section className="mt-6 rounded-3xl border border-line bg-surface p-5">
           <h2 className="text-xl font-semibold">提交前检查</h2>
           <ul className="mt-4 space-y-3">
             {paper.questions.map((question, questionIndex) => (
@@ -165,7 +166,7 @@ export function QuizPage() {
                 <p className="font-medium">
                   {questionIndex + 1}. {question.stem}
                 </p>
-                <p className="mt-1 text-slate-600">你的答案：{answers[question.id] || "还没有填写"}</p>
+                <p className="mt-1 text-muted">你的答案：{answers[question.id] || "还没有填写"}</p>
                 <button type="button" onClick={() => { setIndex(questionIndex); setReviewing(false); }} className="mt-2 text-accent">
                   修改这道题
                 </button>
@@ -173,7 +174,7 @@ export function QuizPage() {
             ))}
           </ul>
           {error && <p className="mt-4 text-sm text-rose-700">{error}</p>}
-          <button type="button" onClick={() => void handleSubmit()} disabled={submitting} className="mt-5 rounded-full bg-ink px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
+          <button type="button" onClick={() => void handleSubmit()} disabled={submitting} className="mt-5 rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent disabled:opacity-60">
             {submitting ? "正在评分…" : "提交答卷"}
           </button>
         </section>
@@ -204,7 +205,7 @@ function AnswerEditor({
         onChange={(event) => onChange(questionId, event.target.value)}
         rows={5}
         placeholder="用自己的话写出关键点"
-        className="mt-4 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm"
+        className="mt-4 w-full rounded-2xl border border-line px-4 py-3 text-sm"
       />
     );
   }
@@ -212,7 +213,7 @@ function AnswerEditor({
   return (
     <div className="mt-4 space-y-2">
       {options.map((option) => (
-        <label key={option.key} className="flex cursor-pointer gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+        <label key={option.key} className="flex cursor-pointer gap-3 rounded-2xl border border-line px-4 py-3 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
           <input
             type={questionType === "multiple" ? "checkbox" : "radio"}
             name={`question-${questionId}`}
@@ -237,24 +238,24 @@ function AnswerEditor({
 function ResultView({ result }: { result: QuizResult }) {
   return (
     <section className="mt-6">
-      <div className="rounded-3xl border border-slate-200 bg-white p-5">
-        <p className="text-sm text-slate-500">本次检测</p>
+      <div className="rounded-3xl border border-line bg-surface p-5">
+        <p className="text-sm text-muted">本次检测</p>
         <p className="mt-2 text-3xl font-semibold">{result.score} 分</p>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-muted">
           {result.level_label} · 答对 {result.correct_count} 题 · 答错 {result.wrong_count} 题
         </p>
-        <p className="mt-3 text-sm leading-6 text-slate-600">{result.suggestion}</p>
-        <p className="mt-3 text-sm text-slate-500">这次分数只说明本次检测。长期掌握度会结合历史成绩逐步调整，一次高分不会直接记成熟练掌握。</p>
+        <p className="mt-3 text-sm leading-6 text-muted">{result.suggestion}</p>
+        <p className="mt-3 text-sm text-muted">这次分数只说明本次检测。长期掌握度会结合历史成绩逐步调整，一次高分不会直接记成熟练掌握。</p>
       </div>
       {result.reviews && result.reviews.length > 0 && (
         <ul className="mt-4 space-y-2">
           {result.reviews.map((item) => (
-            <li key={item.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+            <li key={item.id} className="rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
               <p className="font-medium">
                 {item.name} · {item.interval_days} 天后复习 · {formatDate(item.next_review_date)}
               </p>
-              <p className="mt-1 text-slate-600">{item.reason}</p>
-              <p className="mt-1 text-slate-500">{item.risk_reason}</p>
+              <p className="mt-1 text-muted">{item.reason}</p>
+              <p className="mt-1 text-muted">{item.risk_reason}</p>
             </li>
           ))}
         </ul>
@@ -262,27 +263,28 @@ function ResultView({ result }: { result: QuizResult }) {
       {result.mastery_updates.length > 0 && (
         <ul className="mt-4 space-y-2">
           {result.mastery_updates.map((item) => (
-            <li key={item.knowledge_point_id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+            <li key={item.knowledge_point_id} className="rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
               <p className="font-medium">
                 {item.name} · {item.status_label} · {item.new_level}
               </p>
-              <p className="mt-1 text-slate-600">{item.reason}</p>
+              <p className="mt-1 text-muted">{item.reason}</p>
             </li>
           ))}
         </ul>
       )}
       <ol className="mt-4 space-y-3">
         {result.questions.map((question, questionIndex) => (
-          <li key={question.id} className="rounded-3xl border border-slate-200 bg-white p-5 text-sm leading-6">
-            <p className="text-slate-500">
+          <li key={question.id} className="rounded-3xl border border-line bg-surface p-5 text-sm leading-6">
+            <p className="text-muted">
               {questionIndex + 1}. {question.is_correct ? "正确" : "需要再看"} · {question.score} 分
             </p>
             <p className="mt-2 font-medium text-base">{question.stem}</p>
-            <p className="mt-2 text-slate-600">你的答案：{question.user_answer || "未作答"}</p>
+            <p className="mt-2 text-muted">你的答案：{question.user_answer || "未作答"}</p>
             <p>正确答案：{question.correct_answer}</p>
-            <p className="text-slate-600">{question.explanation}</p>
+            <p className="text-muted">{question.explanation}</p>
             {question.error_reason && <p className="text-rose-700">错误原因：{question.error_reason}</p>}
-            {question.suggestion && <p className="text-slate-600">建议：{question.suggestion}</p>}
+            {question.suggestion && <p className="text-muted">建议：{question.suggestion}</p>}
+            <QuestionExplain quizId={result.id} questionId={question.id} />
           </li>
         ))}
       </ol>

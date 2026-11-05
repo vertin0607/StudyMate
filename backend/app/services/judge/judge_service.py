@@ -40,7 +40,7 @@ def request_judge(session: Session, submission_id: int, background: BackgroundTa
         raise HTTPException(status_code=400, detail="缺少测试数据，无法判题")
     with _guard:
         existing = _result_row(session, submission.id)
-        if existing is not None and existing.status in FINAL_STATUSES:
+        if existing is not None and existing.status in CODE_STATUSES:
             return _payload(session, existing)
         if submission.id in _active:
             return _payload(session, existing) if existing is not None else {"submission_id": submission.id, "status": "judging"}

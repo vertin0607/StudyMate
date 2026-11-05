@@ -1,8 +1,9 @@
+import type { QuestionExplanation } from "../types/explain.ts";
 import type { QuizHistoryItem } from "../types/growth.ts";
 import type { LearningAnalytics, QuizPaper, QuizResult } from "../types/quiz.ts";
 import { api } from "./api.ts";
 
-const aiTimeout = 70000;
+const aiTimeout = 120000;
 
 export async function generateQuiz(taskId: number): Promise<QuizPaper> {
   const { data } = await api.post<QuizPaper>("/api/quizzes/generate", { task_id: taskId }, { timeout: aiTimeout });
@@ -33,4 +34,11 @@ export async function fetchAnalytics(): Promise<LearningAnalytics> {
 
 export function isQuizResult(value: QuizPaper | QuizResult): value is QuizResult {
   return value.status === "completed";
+}
+
+export async function explainQuizQuestion(quizId: number, questionId: number): Promise<QuestionExplanation> {
+  const { data } = await api.post<QuestionExplanation>(`/api/quizzes/${quizId}/questions/${questionId}/explain`, undefined, {
+    timeout: aiTimeout,
+  });
+  return data;
 }

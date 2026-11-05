@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/useAuth.ts";
 import { useHealth } from "../hooks/useHealth.ts";
@@ -46,14 +46,14 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="bg-ink text-white md:sticky md:top-0 md:h-screen">
+      <aside className="bg-sidebar text-[color:var(--app-sidebar-text)] md:sticky md:top-0 md:h-screen">
         <div className="flex items-center gap-3 px-5 py-5 md:px-6 md:py-7">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-sm font-semibold">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-on-accent">
             S
           </div>
           <div>
             <p className="text-sm font-semibold tracking-wide">StudyMate</p>
-            <p className="text-xs text-slate-400">AI 学习监督</p>
+            <p className="text-xs text-sidebar-muted">AI 学习监督</p>
           </div>
         </div>
 
@@ -65,8 +65,8 @@ export function AppLayout() {
               className={() =>
                 `block shrink-0 rounded-xl px-3 py-2 text-sm transition ${
                   navItemActive(pathname, item.to)
-                    ? "bg-white/10 text-white"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    ? "bg-[var(--app-sidebar-active)] text-[color:var(--app-sidebar-text)]"
+                    : "text-sidebar-muted hover:bg-[var(--app-sidebar-active)] hover:text-[color:var(--app-sidebar-text)]"
                 }`
               }
             >
@@ -77,9 +77,9 @@ export function AppLayout() {
       </aside>
 
       <div className="min-w-0">
-        <header className="flex flex-col gap-1 border-b border-slate-200/80 bg-white/80 px-4 py-4 backdrop-blur md:flex-row md:items-center md:justify-between md:px-8">
+        <header className="flex flex-col gap-1 border-b border-line bg-surface/80 px-4 py-4 backdrop-blur md:flex-row md:items-center md:justify-between md:px-8">
           <div>
-            <p className="text-xs font-medium tracking-wide text-slate-500">服务器时间</p>
+            <p className="text-xs font-medium tracking-wide text-muted">服务器时间</p>
             <p className="text-sm font-medium text-ink">
               {loading && "正在读取"}
               {!loading && serverTime}
@@ -87,13 +87,16 @@ export function AppLayout() {
             </p>
           </div>
           <div className="flex flex-col items-start gap-1 md:items-end">
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-slate-500">{error ? `${displayName} · 后端未连接` : displayName}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-muted">{error ? `${displayName} · 后端未连接` : displayName}</p>
+              <Link to="/settings" className="rounded-xl border border-line px-3 py-1.5 text-sm text-ink">
+                外观设置
+              </Link>
               <button
                 type="button"
                 onClick={() => void onLogout()}
                 disabled={leaving}
-                className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm text-ink disabled:opacity-60"
+                className="rounded-xl border border-line px-3 py-1.5 text-sm text-ink disabled:opacity-60"
               >
                 {leaving ? "正在退出" : "退出登录"}
               </button>

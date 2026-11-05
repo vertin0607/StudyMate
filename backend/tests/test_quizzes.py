@@ -10,7 +10,7 @@ from app.database import engine
 from app.main import app
 from app.models.goal import LearningGoal
 from app.models.knowledge import KnowledgePoint
-from app.models.quiz import Quiz, QuizAnswer
+from app.models.quiz import KnowledgeMasteryEvent, Quiz, QuizAnswer
 from app.models.user import User
 from app.services.ai.errors import AIError
 
@@ -113,11 +113,77 @@ def answers_for(quiz: dict, perfect: bool = False) -> dict:
     return {"answers": items}
 
 
+def test_generate_accepts_compact_multiple_answers(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "连写多选答案")
+    payload = quiz_body(point_id)
+    payload["questions"][2]["correct_answer"] = "ABC"
+    payload["questions"][2]["options"] = [
+        {"key": "A", "text": "梯度指出增长最快的方向"},
+        {"key": "B", "text": "学习率决定步子大小"},
+        {"key": "C", "text": "更新时通常减去梯度"},
+        {"key": "D", "text": "学习率只改变样本数量"},
+    ]
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(payload))
+
+    response = client.post("/api/quizzes/generate", json={"task_id": task_id})
+
+    assert response.status_code == 200
+    assert response.json()["questions"][2]["question_type"] == "multiple"
+
+
+def test_generate_treats_single_key_multiple_as_single(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "多选实为单选")
+    payload = quiz_body(point_id)
+    payload["questions"][2]["correct_answer"] = "A"
+    payload["questions"][2]["options"] = [
+        {"key": "A", "text": "梯度指出增长最快的方向"},
+        {"key": "B", "text": "学习率决定步子大小"},
+    ]
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(payload))
+
+    response = client.post("/api/quizzes/generate", json={"task_id": task_id})
+
+    assert response.status_code == 200
+    assert response.json()["questions"][2]["question_type"] == "single"
+
+
+def test_generate_accepts_string_knowledge_point_ids(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "字符串编号")
+    payload = quiz_body(point_id)
+    for item in payload["questions"]:
+        item["knowledge_point_id"] = str(point_id)
+    payload["questions"][1]["correct_answer"] = "正确"
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(payload))
+
+    response = client.post("/api/quizzes/generate", json={"task_id": task_id})
+
+    assert response.status_code == 200
+    assert response.json()["question_count"] == 5
+
+
+def test_generate_retries_when_model_call_fails(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "调用失败重试")
+    calls = {"n": 0}
+
+    def fake(_messages: list[dict[str, str]], **_kwargs: object) -> str:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise AIError("无法连接 DeepSeek，请检查网络后重试", status_code=502)
+        return json.dumps(quiz_body(point_id))
+
+    monkeypatch.setattr("app.services.quiz_service.complete_json", fake)
+    response = client.post("/api/quizzes/generate", json={"task_id": task_id})
+
+    assert response.status_code == 200
+    assert calls["n"] == 2
+    assert response.json()["question_count"] == 5
+
+
 def test_generate_hides_answers_and_reuses_ready_quiz(monkeypatch) -> None:
     _goal_id, task_id, point_id = prepare_task(monkeypatch, "隐藏答案")
     calls = {"n": 0}
 
-    def fake(_messages: list[dict[str, str]]) -> str:
+    def fake(_messages: list[dict[str, str]], **_kwargs: object) -> str:
         calls["n"] += 1
         return json.dumps(quiz_body(point_id))
 
@@ -138,7 +204,7 @@ def test_invalid_quiz_json_is_not_saved(monkeypatch) -> None:
     _goal_id, task_id, _point_id = prepare_task(monkeypatch, "无效试卷")
     calls = {"n": 0}
 
-    def fake(_messages: list[dict[str, str]]) -> str:
+    def fake(_messages: list[dict[str, str]], **_kwargs: object) -> str:
         calls["n"] += 1
         return "不是 JSON"
 
@@ -155,7 +221,7 @@ def test_incomplete_question_is_rejected(monkeypatch) -> None:
     _goal_id, task_id, point_id = prepare_task(monkeypatch, "缺字段")
     payload = quiz_body(point_id)
     del payload["questions"][0]["stem"]
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(payload))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(payload))
 
     response = client.post("/api/quizzes/generate", json={"task_id": task_id})
 
@@ -167,7 +233,7 @@ def test_incomplete_question_is_rejected(monkeypatch) -> None:
 def test_objective_and_short_answers_are_scored(monkeypatch) -> None:
     goal_id, task_id, point_id = prepare_task(monkeypatch, "混合评分")
 
-    def fake(messages: list[dict[str, str]]) -> str:
+    def fake(messages: list[dict[str, str]], **_kwargs: object) -> str:
         if "请为下面的回答评分" in messages[-1]["content"]:
             body = json.loads(messages[-1]["content"].split("\n", 1)[1])
             return json.dumps(
@@ -212,7 +278,7 @@ def test_objective_and_short_answers_are_scored(monkeypatch) -> None:
 def test_failed_short_grading_does_not_finish_quiz(monkeypatch) -> None:
     _goal_id, task_id, point_id = prepare_task(monkeypatch, "评分失败")
 
-    def fake(messages: list[dict[str, str]]) -> str:
+    def fake(messages: list[dict[str, str]], **_kwargs: object) -> str:
         if "请为下面的回答评分" in messages[-1]["content"]:
             raise AIError("模拟评分失败")
         return json.dumps(quiz_body(point_id))
@@ -235,7 +301,7 @@ def test_failed_short_grading_does_not_finish_quiz(monkeypatch) -> None:
 
 def test_repeat_submit_is_rejected(monkeypatch) -> None:
     _goal_id, task_id, point_id = prepare_task(monkeypatch, "重复提交")
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(quiz_body(point_id, perfect=True)))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
     quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
     payload = answers_for(quiz, perfect=True)
     assert client.post(f"/api/quizzes/{quiz['id']}/submit", json=payload).status_code == 200
@@ -244,7 +310,7 @@ def test_repeat_submit_is_rejected(monkeypatch) -> None:
 
 def test_two_high_scores_raise_mastery_gradually(monkeypatch) -> None:
     _goal_id, task_id, point_id = prepare_task(monkeypatch, "连续高分")
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(quiz_body(point_id, perfect=True)))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
     first = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
     first_result = client.post(f"/api/quizzes/{first['id']}/submit", json=answers_for(first, perfect=True)).json()
     assert first_result["score"] == 100
@@ -261,7 +327,7 @@ def test_two_high_scores_raise_mastery_gradually(monkeypatch) -> None:
 
 def test_low_score_marks_needs_review(monkeypatch) -> None:
     _goal_id, task_id, point_id = prepare_task(monkeypatch, "低分巩固")
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(quiz_body(point_id, perfect=True)))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
     quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
     wrong = answers_for(quiz, perfect=True)
     for item in wrong["answers"]:
@@ -281,7 +347,7 @@ def test_low_score_marks_needs_review(monkeypatch) -> None:
 def test_plan_prompt_receives_mastery(monkeypatch) -> None:
     captured: dict[str, str] = {}
 
-    def fake(messages: list[dict[str, str]]) -> str:
+    def fake(messages: list[dict[str, str]], **_kwargs: object) -> str:
         captured["text"] = messages[-1]["content"]
         return json.dumps(plan_payload())
 
@@ -309,7 +375,7 @@ def test_unfinished_task_does_not_call_model(monkeypatch) -> None:
     goal_id = client.post("/api/goals", json=goal_payload(title="未完成不能检测")).json()["id"]
     task_id = client.post("/api/plans/generate", json={"goal_id": goal_id}).json()["plan"]["tasks"][0]["id"]
 
-    def fail_if_called(_messages: list[dict[str, str]]) -> str:
+    def fail_if_called(_messages: list[dict[str, str]], **_kwargs: object) -> str:
         raise AssertionError("未完成的任务不应出题")
 
     monkeypatch.setattr("app.services.quiz_service.complete_json", fail_if_called)
@@ -318,7 +384,7 @@ def test_unfinished_task_does_not_call_model(monkeypatch) -> None:
 
 def test_delete_goal_removes_quiz(monkeypatch) -> None:
     goal_id, task_id, point_id = prepare_task(monkeypatch, "删除检测")
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(quiz_body(point_id, perfect=True)))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
     quiz_id = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()["id"]
 
     assert client.delete(f"/api/goals/{goal_id}").status_code == 204
@@ -328,7 +394,7 @@ def test_delete_goal_removes_quiz(monkeypatch) -> None:
 
 def test_other_user_cannot_read_quiz(monkeypatch) -> None:
     _goal_id, task_id, point_id = prepare_task(monkeypatch, "隔离检测")
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(quiz_body(point_id, perfect=True)))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
     quiz_id = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()["id"]
     with Session(engine) as session:
         other = User(username="other")
@@ -346,7 +412,7 @@ def test_other_user_cannot_read_quiz(monkeypatch) -> None:
 
 def test_failed_commit_does_not_mark_quiz_completed(monkeypatch) -> None:
     _goal_id, task_id, point_id = prepare_task(monkeypatch, "事务回滚")
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(quiz_body(point_id, perfect=True)))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
     quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
 
     def fail(_session: Session) -> None:
@@ -357,3 +423,170 @@ def test_failed_commit_does_not_mark_quiz_completed(monkeypatch) -> None:
 
     assert response.status_code == 500
     assert client.get(f"/api/quizzes/{quiz['id']}").json()["status"] == "ready"
+
+
+def _point_events(point_id: int) -> list[KnowledgeMasteryEvent]:
+    with Session(engine) as session:
+        return list(
+            session.exec(
+                select(KnowledgeMasteryEvent)
+                .where(KnowledgeMasteryEvent.knowledge_point_id == point_id)
+                .order_by(KnowledgeMasteryEvent.created_at, KnowledgeMasteryEvent.id)
+            ).all()
+        )
+
+
+def _set_mastery(point_id: int, level: int, status: str = "improving") -> None:
+    with Session(engine) as session:
+        point = session.get(KnowledgePoint, point_id)
+        assert point is not None
+        point.mastery_level = level
+        point.status = status
+        session.add(point)
+        session.commit()
+
+
+def test_mastery_baseline_without_events_is_not_first_attempt(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "无事件基线零分")
+    _set_mastery(point_id, 72, "basic")
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
+    quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
+    wrong = answers_for(quiz, perfect=True)
+    for item in wrong["answers"]:
+        item["answer"] = "B"
+    result = client.post(f"/api/quizzes/{quiz['id']}/submit", json=wrong).json()
+
+    update = result["mastery_updates"][0]
+    assert update["previous_level"] == 72
+    assert update["new_level"] == 36
+    assert update["status"] == "needs_review"
+    assert "首次检测" not in update["reason"]
+    events = _point_events(point_id)
+    assert len(events) == 1
+    assert events[0].previous_level == 72
+    assert events[0].new_level == 36
+    assert events[0].quiz_score == 0
+
+
+def test_mastery_baseline_without_events_passing_score_is_blended(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "无事件基线及格")
+    _set_mastery(point_id, 55, "improving")
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
+    quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
+    result = client.post(f"/api/quizzes/{quiz['id']}/submit", json=answers_for(quiz, perfect=True)).json()
+
+    update = result["mastery_updates"][0]
+    assert update["previous_level"] == 55
+    assert update["new_level"] == 82
+    assert update["status"] == "basic"
+    assert "首次检测" not in update["reason"]
+    assert len(_point_events(point_id)) == 1
+
+
+def test_mastery_with_matching_event_keeps_consecutive_high(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "事件与快照一致")
+    _set_mastery(point_id, 74, "improving")
+    with Session(engine) as session:
+        session.add(
+            KnowledgeMasteryEvent(
+                knowledge_point_id=point_id,
+                previous_level=None,
+                new_level=74,
+                quiz_score=100,
+                reason="已有检测",
+            )
+        )
+        session.commit()
+    before = _point_events(point_id)
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
+    quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
+    result = client.post(f"/api/quizzes/{quiz['id']}/submit", json=answers_for(quiz, perfect=True)).json()
+
+    update = result["mastery_updates"][0]
+    assert update["previous_level"] == 74
+    assert update["new_level"] == 90
+    assert update["status"] == "proficient"
+    after = _point_events(point_id)
+    assert len(after) == 2
+    assert after[0].id == before[0].id
+    assert after[0].new_level == 74
+    assert after[0].reason == "已有检测"
+    assert after[1].quiz_id == quiz["id"]
+
+
+def test_zero_mastery_without_events_is_first_assessment(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "新建首次检测")
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
+    quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
+    assert _point_events(point_id) == []
+    result = client.post(f"/api/quizzes/{quiz['id']}/submit", json=answers_for(quiz, perfect=True)).json()
+
+    update = result["mastery_updates"][0]
+    assert update["previous_level"] is None
+    assert update["new_level"] == 74
+    assert "首次检测" in update["reason"]
+    events = _point_events(point_id)
+    assert len(events) == 1
+    assert events[0].previous_level is None
+
+
+def test_zero_snapshot_falls_back_to_last_event_level(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "快照为空回退事件")
+    with Session(engine) as session:
+        session.add(
+            KnowledgeMasteryEvent(
+                knowledge_point_id=point_id,
+                previous_level=None,
+                new_level=70,
+                quiz_score=70,
+                reason="历史检测",
+            )
+        )
+        session.commit()
+    _set_mastery(point_id, 0, "improving")
+    before = _point_events(point_id)
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
+    quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
+    wrong = answers_for(quiz, perfect=True)
+    for item in wrong["answers"]:
+        item["answer"] = "B"
+    result = client.post(f"/api/quizzes/{quiz['id']}/submit", json=wrong).json()
+
+    update = result["mastery_updates"][0]
+    assert update["previous_level"] == 70
+    assert update["new_level"] == 35
+    assert "首次检测" not in update["reason"]
+    after = _point_events(point_id)
+    assert len(after) == 2
+    assert after[0].id == before[0].id
+    assert after[0].new_level == 70
+    assert after[0].reason == "历史检测"
+    assert after[1].previous_level == 70
+
+
+def test_unsubmitted_quiz_does_not_create_mastery_event(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "未提交不写事件")
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
+    quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
+    assert quiz["status"] == "ready"
+    assert _point_events(point_id) == []
+    with Session(engine) as session:
+        point = session.get(KnowledgePoint, point_id)
+        assert point is not None
+        assert point.mastery_level == 0
+
+
+def test_repeat_submit_does_not_append_mastery_event(monkeypatch) -> None:
+    _goal_id, task_id, point_id = prepare_task(monkeypatch, "重复提交不追加事件")
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(quiz_body(point_id, perfect=True)))
+    quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
+    payload = answers_for(quiz, perfect=True)
+    assert client.post(f"/api/quizzes/{quiz['id']}/submit", json=payload).status_code == 200
+    first = _point_events(point_id)
+    assert len(first) == 1
+    assert client.post(f"/api/quizzes/{quiz['id']}/submit", json=payload).status_code == 409
+    second = _point_events(point_id)
+    assert len(second) == 1
+    assert second[0].id == first[0].id
+    assert second[0].new_level == first[0].new_level
+    assert second[0].reason == first[0].reason

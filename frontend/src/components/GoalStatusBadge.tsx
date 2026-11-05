@@ -9,7 +9,7 @@ const labels: Record<GoalStatus, string> = {
 const styles: Record<GoalStatus, string> = {
   active: "bg-accent-soft text-accent",
   paused: "bg-amber-50 text-amber-800",
-  completed: "bg-slate-100 text-slate-600",
+  completed: "bg-soft text-muted",
 };
 
 export function GoalStatusBadge({ status }: { status: GoalStatus }) {

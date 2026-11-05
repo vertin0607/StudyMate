@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app.database import get_session
-from app.schemas.review import PostponeRequest
-from app.services import review_service
+from app.schemas.review import KnowledgeFollowupRequest, PostponeRequest
+from app.services import explain_service, review_service
 from app.services.ai.errors import AIError
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -57,3 +57,20 @@ def postpone_review(schedule_id: int, payload: PostponeRequest, session: Session
 @router.post("/{schedule_id}/start")
 def start_review(schedule_id: int, session: Session = Depends(get_session)) -> dict:
     return _call(lambda: review_service.start_review(session, schedule_id))
+
+
+@router.get("/{schedule_id}/explain")
+def get_knowledge_explain(schedule_id: int, session: Session = Depends(get_session)) -> dict:
+    return explain_service.get_knowledge_explain(session, schedule_id)
+
+
+@router.post("/{schedule_id}/explain")
+def start_knowledge_explain(schedule_id: int, session: Session = Depends(get_session)) -> dict:
+    return _call(lambda: explain_service.start_knowledge_explain(session, schedule_id))
+
+
+@router.post("/{schedule_id}/explain/messages")
+def followup_knowledge_explain(
+    schedule_id: int, payload: KnowledgeFollowupRequest, session: Session = Depends(get_session)
+) -> dict:
+    return _call(lambda: explain_service.followup_knowledge_explain(session, schedule_id, payload.content))

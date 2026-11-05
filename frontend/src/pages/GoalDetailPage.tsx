@@ -77,11 +77,11 @@ export function GoalDetailPage() {
       </Link>
 
       {validId === null && <p className="mt-6 text-sm text-rose-700">这个地址里的目标编号不正确。</p>}
-      {loading && <p className="mt-6 text-sm text-slate-500">正在读取学习目标…</p>}
+      {loading && <p className="mt-6 text-sm text-muted">正在读取学习目标…</p>}
       {!loading && error && (
         <div className="mt-6 rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm leading-6 text-rose-800">
           <p>{error}</p>
-          <button type="button" onClick={reload} className="mt-4 rounded-full bg-ink px-4 py-2 text-white">
+          <button type="button" onClick={reload} className="mt-4 rounded-full bg-accent px-4 py-2 text-on-accent">
             重新读取
           </button>
         </div>
@@ -96,18 +96,18 @@ export function GoalDetailPage() {
             </div>
             <GoalStatusBadge status={goal.status} />
           </div>
-          <p className="mt-4 text-base leading-7 text-slate-600">{goal.description}</p>
-          <dl className="mt-6 grid gap-3 rounded-3xl border border-slate-200 bg-white p-6 text-sm sm:grid-cols-2">
+          <p className="mt-4 text-base leading-7 text-muted">{goal.description}</p>
+          <dl className="mt-6 grid gap-3 rounded-3xl border border-line bg-surface p-6 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-slate-500">预计完成</dt>
+              <dt className="text-muted">预计完成</dt>
               <dd className="mt-1 font-medium">{formatDate(goal.target_date)}</dd>
             </div>
             <div>
-              <dt className="text-slate-500">每日学习</dt>
+              <dt className="text-muted">每日学习</dt>
               <dd className="mt-1 font-medium">{goal.daily_minutes} 分钟</dd>
             </div>
             <div>
-              <dt className="text-slate-500">创建时间</dt>
+              <dt className="text-muted">创建时间</dt>
               <dd className="mt-1 font-medium">{formatServerTime(goal.created_at)}</dd>
             </div>
           </dl>

@@ -56,15 +56,15 @@ def parse_quiz(raw: str, allowed_ids: set[int], focus_id: int | None) -> QuizDra
             raise AIError("题目类型不受支持", status_code=502)
         if difficulty not in DIFFICULTIES:
             raise AIError("题目难度不受支持", status_code=502)
-        point_id = item.get("knowledge_point_id")
-        if isinstance(point_id, bool) or not isinstance(point_id, int) or point_id not in allowed_ids:
-            raise AIError("题目必须对应本次学习中的知识点", status_code=502)
+        point_id = _point_id(item.get("knowledge_point_id"), allowed_ids)
         stem = _text(item.get("stem"), "题干", 8, 2000)
         if stem in stems:
             raise AIError("检测里有重复题目", status_code=502)
         stems.add(stem)
         options = _options(item.get("options"), question_type)
-        answer = _answer(item.get("correct_answer"), question_type, options)
+        raw_answer = _raw_answer(item.get("correct_answer"))
+        question_type = _effective_type(question_type, raw_answer, options)
+        answer = _answer(raw_answer, question_type, options)
         explanation = _text(item.get("explanation"), "答案解析", 8, 2000)
         questions.append(
             QuestionDraft(question_type, difficulty, stem, options, answer, explanation, point_id)
@@ -118,7 +118,10 @@ def parse_grades(raw: str, expected_ids: set[int]) -> list[GradeDraft]:
 def normalize_answer(question_type: str, value: str) -> str:
     text = value.strip()
     if question_type == "multiple":
-        keys = [part.strip().upper() for part in text.replace("，", ",").split(",") if part.strip()]
+        text = text.replace("，", ",").replace("、", ",").replace(" ", ",")
+        keys = [part.strip().upper() for part in text.split(",") if part.strip()]
+        if len(keys) == 1 and keys[0].isalpha() and 2 <= len(keys[0]) <= 6:
+            keys = list(keys[0])
         return ",".join(sorted(set(keys)))
     if question_type in {"single", "true_false"}:
         return text.upper()
@@ -154,10 +157,49 @@ def _options(value: object, question_type: str) -> list[dict[str, str]]:
     return options
 
 
+def _raw_answer(value: object) -> object:
+    if isinstance(value, list):
+        parts = [str(item).strip() for item in value if str(item).strip()]
+        return ",".join(parts)
+    return value
+
+
+def _effective_type(question_type: str, correct_answer: object, options: list[dict[str, str]]) -> str:
+    if question_type != "multiple" or not isinstance(correct_answer, str):
+        return question_type
+    selected = [key for key in normalize_answer("multiple", correct_answer).split(",") if key]
+    keys = {item["key"] for item in options}
+    if len(selected) == 1 and selected[0] in keys:
+        return "single"
+    return question_type
+
+
+def _point_id(value: object, allowed_ids: set[int]) -> int:
+    if isinstance(value, bool):
+        raise AIError("题目必须对应本次学习中的知识点", status_code=502)
+    if isinstance(value, int):
+        point_id = value
+    elif isinstance(value, float) and value.is_integer():
+        point_id = int(value)
+    elif isinstance(value, str) and value.strip().isdigit():
+        point_id = int(value.strip())
+    else:
+        raise AIError("题目必须对应本次学习中的知识点", status_code=502)
+    if point_id not in allowed_ids:
+        raise AIError("题目必须对应本次学习中的知识点", status_code=502)
+    return point_id
+
+
 def _answer(value: object, question_type: str, options: list[dict[str, str]]) -> str:
     if not isinstance(value, str):
         raise AIError("正确答案不能为空", status_code=502)
     answer = normalize_answer(question_type, value)
+    if question_type == "true_false":
+        lowered = answer.casefold()
+        if lowered in {"t", "true", "正确", "对"}:
+            answer = "T"
+        elif lowered in {"f", "false", "错误", "错"}:
+            answer = "F"
     keys = {item["key"] for item in options}
     if question_type == "true_false" and answer not in {"T", "F"}:
         raise AIError("判断题答案只能是 T 或 F", status_code=502)

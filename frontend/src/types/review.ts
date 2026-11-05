@@ -3,8 +3,10 @@ export type ReviewRisk = "low" | "medium" | "high";
 export type ReviewScheduleCard = {
   id: number;
   goal_id: number;
+  goal_title?: string | null;
   knowledge_point_id: number;
   name: string;
+  last_reviewed_at?: string | null;
   mastery_level: number | null;
   mastery_assessed: boolean;
   status_label: string;

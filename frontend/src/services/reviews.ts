@@ -1,8 +1,9 @@
+import type { KnowledgeExplainSession } from "../types/explain.ts";
 import type { QuizPaper } from "../types/quiz.ts";
 import type { ForgettingRiskReport, LearningTrends, ReviewDetail, ReviewQueue, ReviewRecordItem, ReviewStatistics } from "../types/review.ts";
 import { api } from "./api.ts";
 
-const aiTimeout = 70000;
+const aiTimeout = 120000;
 
 export async function fetchReviewQueue(): Promise<ReviewQueue> {
   const { data } = await api.get<ReviewQueue>("/api/reviews/today");
@@ -43,5 +44,24 @@ export async function fetchForgettingRisk(): Promise<ForgettingRiskReport> {
 
 export async function fetchReviewStatistics(): Promise<ReviewStatistics> {
   const { data } = await api.get<ReviewStatistics>("/api/learning/review-statistics");
+  return data;
+}
+
+export async function fetchKnowledgeExplain(scheduleId: number): Promise<KnowledgeExplainSession> {
+  const { data } = await api.get<KnowledgeExplainSession>(`/api/reviews/${scheduleId}/explain`);
+  return data;
+}
+
+export async function startKnowledgeExplain(scheduleId: number): Promise<KnowledgeExplainSession> {
+  const { data } = await api.post<KnowledgeExplainSession>(`/api/reviews/${scheduleId}/explain`, undefined, { timeout: aiTimeout });
+  return data;
+}
+
+export async function followupKnowledgeExplain(scheduleId: number, content: string): Promise<KnowledgeExplainSession> {
+  const { data } = await api.post<KnowledgeExplainSession>(
+    `/api/reviews/${scheduleId}/explain/messages`,
+    { content },
+    { timeout: aiTimeout },
+  );
   return data;
 }

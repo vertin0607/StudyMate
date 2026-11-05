@@ -97,14 +97,14 @@ export function GoalsPage() {
         <div>
           <p className="text-sm font-medium text-accent">学习目标</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">你正在学什么</h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+          <p className="mt-3 max-w-2xl text-base leading-7 text-muted">
             每个目标会单独保存在本地数据库里。暂停后可以恢复，删除前会再确认一次。
           </p>
         </div>
         <button
           type="button"
           onClick={openCreate}
-          className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+          className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-accent transition hover:bg-accent-hover"
         >
           新建学习目标
         </button>
@@ -145,34 +145,34 @@ export function GoalsPage() {
       )}
 
       <div className="mt-6">
-        {loading && <p className="text-sm text-slate-500">正在读取学习目标…</p>}
+        {loading && <p className="text-sm text-muted">正在读取学习目标…</p>}
         {!loading && error && (
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm leading-6 text-rose-800">
             <p>{error}</p>
-            <button type="button" onClick={reload} className="mt-4 rounded-full bg-ink px-4 py-2 text-white">
+            <button type="button" onClick={reload} className="mt-4 rounded-full bg-accent px-4 py-2 text-on-accent">
               重新读取
             </button>
           </div>
         )}
         {!loading && !error && goals.length === 0 && (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-sm leading-6 text-slate-500">
+          <div className="rounded-3xl border border-dashed border-line bg-surface px-6 py-10 text-sm leading-6 text-muted">
             还没有学习目标。创建之后，首页上的数量会跟着变化。
           </div>
         )}
         {!loading && !error && goals.length > 0 && (
           <ul className="space-y-4">
             {goals.map((goal) => (
-              <li key={goal.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <li key={goal.id} className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <Link to={`/goals/${goal.id}`} className="text-xl font-semibold tracking-tight hover:text-accent">
                       {goal.title}
                     </Link>
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{goal.description}</p>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">{goal.description}</p>
                   </div>
                   <GoalStatusBadge status={goal.status} />
                 </div>
-                <p className="mt-4 text-sm text-slate-500">
+                <p className="mt-4 text-sm text-muted">
                   预计 {formatDate(goal.target_date)} 完成 · 每天 {goal.daily_minutes} 分钟
                 </p>
                 <div className="mt-4">

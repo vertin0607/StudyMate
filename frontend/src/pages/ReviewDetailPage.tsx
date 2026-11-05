@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
+import { KnowledgeExplainPanel } from "../components/KnowledgeExplainPanel.tsx";
 import { fetchReview, postponeReview, startReview } from "../services/reviews.ts";
 import type { ReviewDetail } from "../types/review.ts";
 import { getErrorMessage } from "../utils/apiError.ts";
@@ -8,7 +9,9 @@ import { formatDate, formatServerTime } from "../utils/format.ts";
 
 export function ReviewDetailPage() {
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const scheduleId = Number(params.scheduleId);
+  const autoExplain = searchParams.get("explain") === "1";
   const [detail, setDetail] = useState<ReviewDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,25 +81,29 @@ export function ReviewDetailPage() {
       <Link to="/reviews" className="text-sm font-medium text-accent">
         返回复习列表
       </Link>
-      {loading && <p className="mt-6 text-sm text-slate-500">正在读取复习档案…</p>}
+      {loading && <p className="mt-6 text-sm text-muted">正在读取复习档案…</p>}
       {error && <p className="mt-6 text-sm text-rose-700">{error}</p>}
       {detail && (
         <>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight">{detail.name}</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">{detail.risk_reason}</p>
-          <p className="mt-2 text-sm text-slate-600">
-            {detail.risk_label} · {detail.stage_label} · 下次复习 {formatDate(detail.next_review_date)}
+          {detail.goal_title && <p className="mt-2 text-sm text-muted">所属目标：{detail.goal_title}</p>}
+          <p className="mt-3 text-sm leading-6 text-muted">{detail.risk_reason}</p>
+          <p className="mt-2 text-sm text-muted">
+            {detail.risk_label} · {detail.stage_label} · 掌握程度 {detail.mastery_assessed ? detail.mastery_level : "尚未评估"} · 下次复习{" "}
+            {formatDate(detail.next_review_date)}
           </p>
+          <p className="mt-2 text-sm text-muted">上次复习 {detail.last_reviewed_at ? formatServerTime(detail.last_reviewed_at) : "暂无"}</p>
           <div className="mt-5 flex flex-wrap gap-2">
             {canStart && (
-              <button type="button" onClick={begin} disabled={starting} className="rounded-full bg-ink px-4 py-2 text-sm text-white disabled:opacity-60">
+              <button type="button" onClick={begin} disabled={starting} className="rounded-full bg-accent px-4 py-2 text-sm text-on-accent disabled:opacity-60">
                 {starting ? "正在出题…" : "开始复习"}
               </button>
             )}
-            <button type="button" onClick={postpone} disabled={postponing} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm disabled:opacity-60">
+            <button type="button" onClick={postpone} disabled={postponing} className="rounded-full border border-line bg-surface px-4 py-2 text-sm disabled:opacity-60">
               {postponing ? "正在推迟…" : "推迟 1 天"}
             </button>
           </div>
+          <KnowledgeExplainPanel scheduleId={detail.id} autoStart={autoExplain} />
           {memory && (
             <dl className="mt-6 grid grid-cols-2 gap-3 text-sm md:grid-cols-3">
               {[
@@ -110,17 +117,17 @@ export function ReviewDetailPage() {
                 ["掌握度", memory.mastery_assessed ? `${memory.mastery_level} · ${memory.status_label}` : "尚未评估"],
                 ["连续达标", String(memory.correct_streak)],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl bg-white px-4 py-3">
-                  <dt className="text-slate-500">{label}</dt>
+                <div key={label} className="rounded-2xl bg-surface px-4 py-3">
+                  <dt className="text-muted">{label}</dt>
                   <dd className="mt-1 font-medium">{value}</dd>
                 </div>
               ))}
             </dl>
           )}
           {memory && memory.weak_points.length > 0 && (
-            <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-5">
+            <section className="mt-4 rounded-3xl border border-line bg-surface p-5">
               <h2 className="text-lg font-semibold">历史薄弱点</h2>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
                 {memory.weak_points.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -128,7 +135,7 @@ export function ReviewDetailPage() {
             </section>
           )}
           {memory && memory.weak_points.length === 0 && (
-            <p className="mt-4 text-sm text-slate-500">还没有记录到反复出错的地方。</p>
+            <p className="mt-4 text-sm text-muted">还没有记录到反复出错的地方。</p>
           )}
         </>
       )}

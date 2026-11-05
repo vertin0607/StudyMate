@@ -11,6 +11,7 @@ from app.database import engine
 from app.main import app
 from app.models.goal import LearningGoal
 from app.models.knowledge import KnowledgePoint
+from app.models.quiz import KnowledgeMasteryEvent
 from app.models.review import ReviewSchedule
 from app.models.user import User
 from app.services.ai.errors import AIError
@@ -78,7 +79,7 @@ def prepare(monkeypatch, title: str) -> tuple[int, int]:
 
 
 def submit_perfect(monkeypatch, task_id: int, point_id: int) -> dict:
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(perfect_quiz(point_id)))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(perfect_quiz(point_id)))
     quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
     answers = {"answers": [{"question_id": item["id"], "answer": "A"} for item in quiz["questions"]]}
     return client.post(f"/api/quizzes/{quiz['id']}/submit", json=answers).json()
@@ -114,7 +115,7 @@ def test_passing_review_extends_and_repeat_submit_does_not(monkeypatch) -> None:
         schedule_id = schedule.id
     calls = {"n": 0}
 
-    def fake(_messages: list[dict[str, str]]) -> str:
+    def fake(_messages: list[dict[str, str]], **_kwargs) -> str:
         calls["n"] += 1
         return json.dumps(perfect_quiz(point_id))
 
@@ -144,7 +145,7 @@ def test_failed_review_shrinks_interval(monkeypatch) -> None:
         schedule.next_review_date = local_today()
         session.add(schedule)
         session.commit()
-    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages: json.dumps(perfect_quiz(point_id)))
+    monkeypatch.setattr("app.services.quiz_service.complete_json", lambda _messages, **_kwargs: json.dumps(perfect_quiz(point_id)))
     quiz = client.post("/api/quizzes/generate", json={"task_id": task_id}).json()
     wrong = {"answers": [{"question_id": item["id"], "answer": "B"} for item in quiz["questions"]]}
     result = client.post(f"/api/quizzes/{quiz['id']}/submit", json=wrong).json()
@@ -186,6 +187,8 @@ def test_queue_priority_overdue_and_postpone(monkeypatch) -> None:
     assert client.get("/api/reviews/overdue").json()["items"] == []
     history = client.get("/api/reviews/history").json()["records"]
     assert history[0]["result"] == "postponed"
+    with Session(engine) as session:
+        assert session.exec(select(KnowledgeMasteryEvent)).first() is None
 
 
 def test_plan_prompt_receives_due_reviews(monkeypatch) -> None:
@@ -224,7 +227,7 @@ def test_future_review_cannot_start(monkeypatch) -> None:
     result = submit_perfect(monkeypatch, task_id, _point_id)
     schedule_id = result["reviews"][0]["id"]
 
-    def fail_if_called(_messages: list[dict[str, str]]) -> str:
+    def fail_if_called(_messages: list[dict[str, str]], **_kwargs) -> str:
         raise AssertionError("未到期不应出题")
 
     monkeypatch.setattr("app.services.review_service.complete_json", fail_if_called)
@@ -242,7 +245,7 @@ def test_invalid_review_quiz_is_not_saved(monkeypatch) -> None:
         schedule_id = schedule.id
     calls = {"n": 0}
 
-    def fake(_messages: list[dict[str, str]]) -> str:
+    def fake(_messages: list[dict[str, str]], **_kwargs) -> str:
         calls["n"] += 1
         return "不是 JSON"
 

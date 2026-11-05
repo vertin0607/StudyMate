@@ -9,7 +9,7 @@ from app.database import engine
 from app.main import app
 from app.models.goal import LearningGoal
 from app.models.knowledge import KnowledgePoint
-from app.models.quiz import KnowledgeMasteryEvent, Quiz
+from app.models.quiz import KnowledgeMasteryEvent, Quiz, QuizAnswer, QuizQuestion
 from app.models.recommendation import TrainingRecommendation
 from app.models.review import ReviewSchedule
 from app.models.user import User
@@ -183,6 +183,22 @@ def test_users_only_see_and_change_their_own_records() -> None:
         session.refresh(point)
         quiz = Quiz(goal_id=goal_b["id"], title=f"B 的检测 {suffix}", status="completed", score=80, created_at=now, submitted_at=now)
         session.add(quiz)
+        session.flush()
+        question = QuizQuestion(
+            quiz_id=quiz.id,
+            knowledge_point_id=point.id,
+            sort_order=0,
+            question_type="single",
+            difficulty="basic",
+            stem="B 的私有题目",
+            options_json='[{"key":"A","text":"对"},{"key":"B","text":"错"}]',
+            correct_answer="A",
+            explanation="隔离用解析",
+            created_at=now,
+        )
+        session.add(question)
+        session.flush()
+        session.add(QuizAnswer(question_id=question.id, user_answer="B", is_correct=False, score=0, created_at=now))
         session.add(
             KnowledgeMasteryEvent(
                 knowledge_point_id=point.id,
@@ -217,10 +233,12 @@ def test_users_only_see_and_change_their_own_records() -> None:
         )
         session.commit()
         session.refresh(quiz)
+        session.refresh(question)
         schedule = session.exec(select(ReviewSchedule).where(ReviewSchedule.knowledge_point_id == point.id)).one()
         recommendation = session.exec(select(TrainingRecommendation).where(TrainingRecommendation.user_id == goal_b["user_id"])).one()
         point_id = point.id
         quiz_id = quiz.id
+        question_id = question.id
         schedule_id = schedule.id
         recommendation_id = recommendation.id
         schedules_before = session.exec(select(func.count()).select_from(ReviewSchedule)).one()
@@ -228,7 +246,10 @@ def test_users_only_see_and_change_their_own_records() -> None:
     assert user_a.get(f"/api/knowledge/{point_id}").status_code == 404
     assert user_a.get(f"/api/quizzes/{quiz_id}").status_code == 404
     assert user_a.get(f"/api/quizzes/{quiz_id}/result").status_code == 404
+    assert _send(user_a, "post", f"/api/quizzes/{quiz_id}/questions/{question_id}/explain").status_code == 404
     assert user_a.get(f"/api/reviews/{schedule_id}").status_code == 404
+    assert _send(user_a, "post", f"/api/reviews/{schedule_id}/explain").status_code == 404
+    assert _send(user_a, "post", f"/api/reviews/{schedule_id}/explain/messages", json={"content": "越权追问"}).status_code == 404
     assert user_a.get(f"/api/learning/recommendations/{recommendation_id}").status_code == 404
     session_b = _send(user_b, "post", "/api/tutor/sessions", json={"goal_id": goal_b["id"]})
     assert session_b.status_code == 201
