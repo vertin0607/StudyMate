@@ -406,6 +406,9 @@ def _task_context(session: Session, task_id: int):
     if plan is None:
         raise HTTPException(status_code=404, detail="学习任务不存在")
     goal = goal_service.get_goal(session, plan.goal_id)
+    from app.services.planning_service import _same_goal_point
+
+    _same_goal_point(session, plan, task.knowledge_point_id)
     if plan.status != "active":
         raise HTTPException(status_code=409, detail="只能检测当前计划中的任务")
     return task, plan, goal
@@ -416,6 +419,10 @@ def _get_quiz(session: Session, quiz_id: int) -> Quiz:
     if quiz is None:
         raise HTTPException(status_code=404, detail="知识检测不存在")
     goal_service.get_goal(session, quiz.goal_id)
+    for question in _questions(session, quiz.id):
+        point = session.get(KnowledgePoint, question.knowledge_point_id)
+        if point is not None and point.goal_id != quiz.goal_id:
+            raise HTTPException(status_code=404, detail="知识检测不存在")
     return quiz
 
 

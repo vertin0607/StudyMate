@@ -60,6 +60,31 @@ def _clean_goals() -> None:
         session.commit()
 
 
+def _allow_test_login() -> None:
+    """只给测试库里的 local 设置口令，便于原有用例继续访问自己的数据。"""
+    from sqlmodel import Session, select
+
+    from app.database import engine
+    from app.models.user import User
+    from app.services.auth_service import hash_password
+    from tests.client import LOCAL_PASSWORD
+
+    with Session(engine) as session:
+        user = session.exec(select(User).where(User.username == "local")).one()
+        if user.password_hash:
+            return
+        user.password_hash = hash_password(LOCAL_PASSWORD)
+        session.add(user)
+        session.commit()
+
+
 def pytest_runtest_setup() -> None:
     """每个测试前清掉学习目标，避免用例互相影响。"""
     _clean_goals()
+    _allow_test_login()
+
+
+import fastapi.testclient
+from tests.client import BusinessTestClient
+
+fastapi.testclient.TestClient = BusinessTestClient

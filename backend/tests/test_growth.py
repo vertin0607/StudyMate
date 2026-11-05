@@ -24,6 +24,7 @@ from app.models.review import ReviewRecord, ReviewSchedule
 from app.models.submission import ProblemSubmission
 from app.models.user import User
 from app.services import growth_service
+from app.services.actor import acting_as
 
 client = TestClient(app)
 
@@ -543,7 +544,8 @@ def test_repeated_reads_do_not_write() -> None:
         session.commit()
     before = _dump()
     with Session(engine) as session:
-        growth_service.growth(session, None, 30)
+        with acting_as(user.id):
+            growth_service.growth(session, None, 30)
         assert list(session.new) == []
         assert list(session.dirty) == []
     first = client.get("/api/learning/growth")

@@ -14,6 +14,7 @@ from app.models.practice import ProblemLearningStatus
 from app.models.problem import Problem, ProblemTestCase
 from app.models.submission import ProblemSubmission
 from app.services import goal_service
+from app.services.actor import acting_user
 from app.services.ai.deepseek_client import complete_json
 from app.services.ai.errors import AIError
 from app.services.ai.prompt_builder import MAX_ATTEMPTS, build_repair_messages
@@ -31,6 +32,9 @@ _active: set[int] = set()
 
 def request_judge(session: Session, submission_id: int, background: BackgroundTasks) -> dict:
     submission = _owned_submission(session, submission_id)
+    existing_result = _result_row(session, submission.id)
+    if existing_result is not None:
+        _owned_result(session, submission)
     cases = _cases(session, submission.problem_id)
     if not cases:
         raise HTTPException(status_code=400, detail="缺少测试数据，无法判题")
@@ -77,9 +81,7 @@ def execute_judge(submission_id: int) -> None:
 
 def get_result(session: Session, submission_id: int) -> dict:
     submission = _owned_submission(session, submission_id)
-    row = _result_row(session, submission.id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="还没有判题结果")
+    row = _owned_result(session, submission)
     return _payload(session, row)
 
 
@@ -87,7 +89,7 @@ def judge_history(session: Session, problem_id: int) -> dict:
     from app.services.problem_service import _owned_problem
 
     problem = _owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(
         select(ProblemJudgeResult)
         .where(ProblemJudgeResult.user_id == user.id, ProblemJudgeResult.problem_id == problem.id)
@@ -99,6 +101,8 @@ def judge_history(session: Session, problem_id: int) -> dict:
 def analyze_failure(session: Session, submission_id: int) -> dict:
     submission = _owned_submission(session, submission_id)
     row = _result_row(session, submission.id)
+    if row is not None and (row.user_id != submission.user_id or row.problem_id != submission.problem_id):
+        raise HTTPException(status_code=404, detail="还没有判题结果")
     if row is None or row.status == "judging":
         raise HTTPException(status_code=400, detail="还没有完成判题")
     if row.status == "accepted":
@@ -127,6 +131,11 @@ def _execute(session: Session, submission_id: int) -> None:
     submission = session.get(ProblemSubmission, submission_id)
     result = _result_row(session, submission_id)
     if submission is None or result is None:
+        return
+    if result.user_id != submission.user_id or result.problem_id != submission.problem_id:
+        return
+    problem = session.get(Problem, submission.problem_id)
+    if problem is None or problem.user_id != submission.user_id:
         return
     cases = _cases(session, submission.problem_id)
     if not cases:
@@ -311,6 +320,17 @@ def _cases(session: Session, problem_id: int | None) -> list[ProblemTestCase]:
 
 def _result_row(session: Session, submission_id: int | None) -> ProblemJudgeResult | None:
     return session.exec(select(ProblemJudgeResult).where(ProblemJudgeResult.submission_id == submission_id)).first()
+
+
+def _owned_result(session: Session, submission: ProblemSubmission) -> ProblemJudgeResult:
+    row = _result_row(session, submission.id)
+    if row is None or row.user_id != submission.user_id or row.problem_id != submission.problem_id or row.submission_id != submission.id:
+        raise HTTPException(status_code=404, detail="还没有判题结果")
+    for case in _case_rows(session, row.id):
+        test_case = session.get(ProblemTestCase, case.test_case_id)
+        if test_case is not None and test_case.problem_id != submission.problem_id:
+            raise HTTPException(status_code=404, detail="还没有判题结果")
+    return row
 
 
 def _case_rows(session: Session, result_id: int | None) -> list[ProblemJudgeCaseResult]:

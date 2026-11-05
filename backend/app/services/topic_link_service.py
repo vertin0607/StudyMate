@@ -9,10 +9,11 @@ from app.models.problem import ProblemTopic
 from app.models.topic_link import TopicKnowledgeLink
 from app.schemas.topic_link import TopicKnowledgeLinkCreate
 from app.services import goal_service
+from app.services.actor import acting_user
 
 
 def list_links(session: Session) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(
         select(TopicKnowledgeLink).where(TopicKnowledgeLink.user_id == user.id).order_by(TopicKnowledgeLink.id)
     ).all()
@@ -20,7 +21,7 @@ def list_links(session: Session) -> dict:
 
 
 def create_link(session: Session, payload: TopicKnowledgeLinkCreate) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     topic = _owned_topic(session, user.id, payload.problem_topic_id)
     point = _owned_point(session, payload.knowledge_point_id)
     existing = session.exec(
@@ -40,7 +41,7 @@ def create_link(session: Session, payload: TopicKnowledgeLinkCreate) -> dict:
 
 
 def delete_link(session: Session, link_id: int) -> None:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = session.get(TopicKnowledgeLink, link_id)
     if row is None or row.user_id != user.id:
         raise HTTPException(status_code=404, detail="关联不存在")
@@ -48,14 +49,24 @@ def delete_link(session: Session, link_id: int) -> None:
     goal_service.commit_or_raise(session)
 
 
-def delete_for_knowledge_points(session: Session, point_ids: list[int]) -> None:
-    if point_ids:
-        session.exec(delete(TopicKnowledgeLink).where(TopicKnowledgeLink.knowledge_point_id.in_(point_ids)))
+def delete_for_knowledge_points(session: Session, point_ids: list[int], user_id: int | None) -> None:
+    if point_ids and user_id is not None:
+        session.exec(
+            delete(TopicKnowledgeLink).where(
+                TopicKnowledgeLink.knowledge_point_id.in_(point_ids),
+                TopicKnowledgeLink.user_id == user_id,
+            )
+        )
 
 
-def delete_for_topics(session: Session, topic_ids: list[int]) -> None:
-    if topic_ids:
-        session.exec(delete(TopicKnowledgeLink).where(TopicKnowledgeLink.problem_topic_id.in_(topic_ids)))
+def delete_for_topics(session: Session, topic_ids: list[int], user_id: int | None) -> None:
+    if topic_ids and user_id is not None:
+        session.exec(
+            delete(TopicKnowledgeLink).where(
+                TopicKnowledgeLink.problem_topic_id.in_(topic_ids),
+                TopicKnowledgeLink.user_id == user_id,
+            )
+        )
 
 
 def _owned_topic(session: Session, user_id: int | None, topic_id: int) -> ProblemTopic:
@@ -70,7 +81,7 @@ def _owned_point(session: Session, knowledge_id: int) -> KnowledgePoint:
     if point is None:
         raise HTTPException(status_code=404, detail="学习知识点不存在")
     goal = session.get(LearningGoal, point.goal_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     if goal is None or goal.user_id != user.id:
         raise HTTPException(status_code=404, detail="学习知识点不存在")
     return point

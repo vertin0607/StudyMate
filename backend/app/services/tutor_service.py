@@ -12,6 +12,7 @@ from app.models.knowledge import KnowledgePoint
 from app.models.quiz import KnowledgeMasteryEvent, QuizAnswer, QuizQuestion
 from app.models.tutor import TutorMessage, TutorSession
 from app.services import goal_service
+from app.services.actor import acting_user
 from app.services.ai.deepseek_client import complete_json
 from app.services.ai.errors import AIError
 from app.services.ai.prompt_builder import MAX_ATTEMPTS, build_repair_messages
@@ -62,7 +63,7 @@ def parse_tutor_reply(raw: str) -> str:
 
 
 def create_session(session: Session, goal_id: int | None, title: str | None) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     goal = None if goal_id is None else goal_service.get_goal(session, goal_id)
     now = datetime.now(timezone.utc)
     row = TutorSession(
@@ -79,7 +80,7 @@ def create_session(session: Session, goal_id: int | None, title: str | None) -> 
 
 
 def list_sessions(session: Session) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(
         select(TutorSession).where(TutorSession.user_id == user.id).order_by(TutorSession.updated_at.desc())
     ).all()
@@ -237,7 +238,7 @@ def _weak_reasons(session: Session, point_id: int | None) -> list[str]:
 
 def _owned_session(session: Session, session_id: int) -> TutorSession:
     row = session.get(TutorSession, session_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     if row is None or row.user_id != user.id:
         raise HTTPException(status_code=404, detail="教学会话不存在")
     if row.goal_id is not None:

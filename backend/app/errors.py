@@ -10,6 +10,11 @@ FIELD_LABELS = {
     "target_date": "预计完成日期",
     "daily_minutes": "每日学习时间",
     "status": "状态",
+    "username": "用户名",
+    "email": "邮箱",
+    "password": "密码",
+    "nickname": "昵称",
+    "avatar": "头像",
 }
 
 
