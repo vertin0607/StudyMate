@@ -12,7 +12,7 @@ from app.models.review import ReviewRecord, ReviewSchedule
 from app.models.submission import ProblemCodeDraft, ProblemSubmission
 from app.models.topic_link import TopicKnowledgeLink
 from app.models.tutor import TutorMessage, TutorSession
-from app.models.user import User
+from app.models.user import User, UserSession
 
 __all__ = [
     "KnowledgeMasteryEvent",
@@ -43,4 +43,5 @@ __all__ = [
     "TutorMessage",
     "TutorSession",
     "User",
+    "UserSession",
 ]

@@ -1,6 +1,9 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import { useAuth } from "../auth/useAuth.ts";
 import { useHealth } from "../hooks/useHealth.ts";
+import { getErrorMessage } from "../utils/apiError.ts";
 import { formatServerTime } from "../utils/format.ts";
 import { navItems } from "../utils/navigation.ts";
 
@@ -19,9 +22,27 @@ function navItemActive(pathname: string, to: string): boolean {
 
 export function AppLayout() {
   const healthState = useHealth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const { health, error, loading } = healthState;
   const serverTime = health ? formatServerTime(health.server_time) : null;
+  const [leaving, setLeaving] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const displayName = user?.nickname || user?.username || "已登录";
+
+  async function onLogout() {
+    setLeaving(true);
+    setLogoutError(null);
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (reason) {
+      setLogoutError(getErrorMessage(reason, "退出失败，请稍后再试"));
+    } finally {
+      setLeaving(false);
+    }
+  }
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[248px_minmax(0,1fr)]">
@@ -65,9 +86,20 @@ export function AppLayout() {
               {!loading && !serverTime && "暂时无法读取"}
             </p>
           </div>
-          <p className="text-sm text-slate-500">
-            {error ? "后端未连接" : "个人本地使用"}
-          </p>
+          <div className="flex flex-col items-start gap-1 md:items-end">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-slate-500">{error ? `${displayName} · 后端未连接` : displayName}</p>
+              <button
+                type="button"
+                onClick={() => void onLogout()}
+                disabled={leaving}
+                className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm text-ink disabled:opacity-60"
+              >
+                {leaving ? "正在退出" : "退出登录"}
+              </button>
+            </div>
+            {logoutError ? <p className="text-sm text-red-600">{logoutError}</p> : null}
+          </div>
         </header>
         <main className="px-4 py-6 md:px-8 md:py-8">
           <Outlet context={healthState} />

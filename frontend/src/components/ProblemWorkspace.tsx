@@ -1,6 +1,7 @@
 import type { EditorView } from "@codemirror/view";
 import { useEffect, useRef, useState } from "react";
 
+import { mutationHeaders } from "../services/api.ts";
 import { fetchJudgeResult, judgeStatusLabel, requestJudge, requestJudgeAnalysis, waitForJudge, type JudgeResult } from "../services/judge.ts";
 import { addWrongProblem } from "../services/practice.ts";
 import { createSubmission, fetchDraft, fetchSubmission, fetchSubmissions, saveDraft, type SubmissionDetail, type SubmissionSummary } from "../services/submissions.ts";
@@ -102,7 +103,8 @@ export function ProblemWorkspace({ problemId }: { problemId: number }) {
       const base = import.meta.env.VITE_API_BASE_URL ?? "";
       void fetch(`${base}/api/problems/${problemId}/draft`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: mutationHeaders(),
         body: JSON.stringify({ source_code: codeRef.current, language: "cpp" }),
         keepalive: true,
       });

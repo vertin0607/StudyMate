@@ -15,6 +15,7 @@ from app.models.review import ReviewRecord, ReviewSchedule
 from app.models.tutor import TutorMessage, TutorSession
 from app.models.user import User
 from app.schemas.goal import GoalCreate, GoalUpdate
+from app.services.actor import acting_user
 
 logger = logging.getLogger(__name__)
 LOCAL_USERNAME = "local"
@@ -30,11 +31,13 @@ def commit_or_raise(session: Session) -> None:
         raise HTTPException(status_code=500, detail="保存学习目标失败，请稍后重试") from None
 
 
-def ensure_local_user(session: Session) -> User:
-    """当前版本只有一个本地用户，但每条目标都记录 user_id。"""
+def ensure_local_user(session: Session) -> User | None:
+    """只在空库中创建历史账号 local。完成初始化后库里已有正式用户，不再补一个新的 local。"""
     user = session.exec(select(User).where(User.username == LOCAL_USERNAME)).first()
     if user is not None:
         return user
+    if session.exec(select(User.id)).first() is not None:
+        return None
 
     user = User(username=LOCAL_USERNAME)
     session.add(user)
@@ -44,7 +47,7 @@ def ensure_local_user(session: Session) -> User:
 
 
 def list_goals(session: Session) -> list[LearningGoal]:
-    user = ensure_local_user(session)
+    user = acting_user(session)
     statement = (
         select(LearningGoal)
         .where(LearningGoal.user_id == user.id)
@@ -54,7 +57,7 @@ def list_goals(session: Session) -> list[LearningGoal]:
 
 
 def get_goal(session: Session, goal_id: int) -> LearningGoal:
-    user = ensure_local_user(session)
+    user = acting_user(session)
     goal = session.get(LearningGoal, goal_id)
     if goal is None or goal.user_id != user.id:
         raise HTTPException(status_code=404, detail="学习目标不存在")
@@ -73,7 +76,7 @@ def _title_taken(session: Session, user_id: int, title: str, ignore_id: int | No
 
 
 def create_goal(session: Session, data: GoalCreate) -> LearningGoal:
-    user = ensure_local_user(session)
+    user = acting_user(session)
     if _title_taken(session, user.id, data.title, None):
         raise HTTPException(status_code=409, detail="已经有同名学习目标，请换一个名称")
 
@@ -127,12 +130,14 @@ def delete_goal(session: Session, goal_id: int) -> None:
     plan_ids = [plan.id for plan in plans if plan.id is not None]
     tutor_ids = [
         item.id
-        for item in session.exec(select(TutorSession).where(TutorSession.goal_id == goal.id)).all()
+        for item in session.exec(
+            select(TutorSession).where(TutorSession.goal_id == goal.id, TutorSession.user_id == goal.user_id)
+        ).all()
         if item.id is not None
     ]
     if tutor_ids:
         session.exec(delete(TutorMessage).where(TutorMessage.session_id.in_(tutor_ids)))
-    session.exec(delete(TutorSession).where(TutorSession.goal_id == goal.id))
+    session.exec(delete(TutorSession).where(TutorSession.goal_id == goal.id, TutorSession.user_id == goal.user_id))
     point_ids = [
         point.id
         for point in session.exec(select(KnowledgePoint).where(KnowledgePoint.goal_id == goal.id)).all()
@@ -154,13 +159,23 @@ def delete_goal(session: Session, goal_id: int) -> None:
         session.exec(delete(QuizQuestion).where(QuizQuestion.quiz_id.in_(quiz_ids)))
         session.exec(delete(KnowledgeMasteryEvent).where(KnowledgeMasteryEvent.quiz_id.in_(quiz_ids)))
         session.exec(delete(Quiz).where(Quiz.id.in_(quiz_ids)))
-    session.exec(delete(TrainingRecommendation).where(TrainingRecommendation.goal_id == goal.id))
+    session.exec(
+        delete(TrainingRecommendation).where(
+            TrainingRecommendation.goal_id == goal.id,
+            TrainingRecommendation.user_id == goal.user_id,
+        )
+    )
     if point_ids:
-        session.exec(delete(TrainingRecommendation).where(TrainingRecommendation.knowledge_point_id.in_(point_ids)))
+        session.exec(
+            delete(TrainingRecommendation).where(
+                TrainingRecommendation.knowledge_point_id.in_(point_ids),
+                TrainingRecommendation.user_id == goal.user_id,
+            )
+        )
         session.exec(delete(KnowledgeMasteryEvent).where(KnowledgeMasteryEvent.knowledge_point_id.in_(point_ids)))
         from app.services.topic_link_service import delete_for_knowledge_points
 
-        delete_for_knowledge_points(session, point_ids)
+        delete_for_knowledge_points(session, point_ids, goal.user_id)
     if plan_ids:
         session.exec(delete(StudyTask).where(StudyTask.plan_id.in_(plan_ids)))
         session.exec(delete(PlanRevision).where(PlanRevision.plan_id.in_(plan_ids)))

@@ -2,14 +2,16 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import init_db
+from app.deps import get_current_user, require_mutation_csrf
 from app.errors import validation_exception_handler
 from app.routers.ai import router as ai_router
+from app.routers.auth import router as auth_router
 from app.routers.analytics import router as analytics_router
 from app.routers.goals import router as goals_router
 from app.routers.health import router as health_router
@@ -45,18 +47,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+business = [Depends(get_current_user), Depends(require_mutation_csrf)]
+
 app.include_router(health_router, prefix="/api")
-app.include_router(goals_router, prefix="/api")
-app.include_router(ai_router, prefix="/api")
-app.include_router(plans_router, prefix="/api")
-app.include_router(tasks_router, prefix="/api")
-app.include_router(quizzes_router, prefix="/api")
-app.include_router(reviews_router, prefix="/api")
-app.include_router(knowledge_router, prefix="/api")
-app.include_router(analytics_router, prefix="/api")
-app.include_router(recommendations_router, prefix="/api")
-app.include_router(topic_links_router, prefix="/api")
-app.include_router(tutor_router, prefix="/api")
-app.include_router(problems_router, prefix="/api")
-app.include_router(practice_router, prefix="/api")
-app.include_router(submissions_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(goals_router, prefix="/api", dependencies=business)
+app.include_router(ai_router, prefix="/api", dependencies=business)
+app.include_router(plans_router, prefix="/api", dependencies=business)
+app.include_router(tasks_router, prefix="/api", dependencies=business)
+app.include_router(quizzes_router, prefix="/api", dependencies=business)
+app.include_router(reviews_router, prefix="/api", dependencies=business)
+app.include_router(knowledge_router, prefix="/api", dependencies=business)
+app.include_router(analytics_router, prefix="/api", dependencies=business)
+app.include_router(recommendations_router, prefix="/api", dependencies=business)
+app.include_router(topic_links_router, prefix="/api", dependencies=business)
+app.include_router(tutor_router, prefix="/api", dependencies=business)
+app.include_router(problems_router, prefix="/api", dependencies=business)
+app.include_router(practice_router, prefix="/api", dependencies=business)
+app.include_router(submissions_router, prefix="/api", dependencies=business)

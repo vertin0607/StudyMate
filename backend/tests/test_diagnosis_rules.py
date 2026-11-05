@@ -20,6 +20,7 @@ from app.models.topic_link import TopicKnowledgeLink
 from app.models.tutor import TutorMessage, TutorSession
 from app.models.user import User
 from app.services import diagnosis_rules
+from app.services.actor import acting_as
 
 client = TestClient(app)
 
@@ -439,6 +440,8 @@ def test_empty_diagnosis_has_full_shape_and_reads_do_not_write() -> None:
         "links": [],
     }
     with Session(engine) as session:
-        diagnosis_rules.diagnose(session, None)
+        local = session.exec(select(User).where(User.username == "local")).one()
+        with acting_as(local.id):
+            diagnosis_rules.diagnose(session, None)
         assert list(session.new) == []
         assert list(session.dirty) == []

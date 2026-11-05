@@ -15,8 +15,8 @@ from app.models.quiz import KnowledgeMasteryEvent, Quiz
 from app.models.review import ReviewRecord, ReviewSchedule
 from app.models.submission import ProblemSubmission
 from app.models.tutor import TutorMessage, TutorSession
-from app.services.goal_service import LOCAL_USERNAME, ensure_local_user
 from app.models.user import User
+from app.services.actor import acting_user
 
 JUDGE_STATUSES = (
     "accepted",
@@ -61,10 +61,7 @@ def snapshot(session: Session) -> dict:
 
 
 def _user(session: Session) -> User:
-    found = session.exec(select(User).where(User.username == LOCAL_USERNAME)).first()
-    if found is not None:
-        return found
-    return ensure_local_user(session)
+    return acting_user(session)
 
 
 def _points(session: Session, goal_ids: list[int]) -> list[KnowledgePoint]:

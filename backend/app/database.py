@@ -23,7 +23,7 @@ def enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
 
 
 def init_db() -> None:
-    """创建数据目录和表，并保证本地用户存在。"""
+    """创建数据目录和表。只有空库才会创建 local。"""
     settings.database_path.parent.mkdir(parents=True, exist_ok=True)
     # 先导入模型，再创建表。
     import app.models  # noqa: F401
@@ -39,10 +39,41 @@ def init_db() -> None:
             "CREATE UNIQUE INDEX IF NOT EXISTS uq_active_plan_per_goal_date "
             "ON study_plans(goal_id, plan_date) WHERE status = 'active'"
         )
+        _migrate_user_columns(connection)
+    # 空库才创建 local。业务请求的身份来自登录会话，不能调用这里的函数。
     from app.services.goal_service import ensure_local_user
 
     with Session(engine) as session:
         ensure_local_user(session)
+
+
+def _migrate_user_columns(connection) -> None:
+    """给已有 users 表补字段。不重建表，不删除 local，也不改历史业务行。"""
+    columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(users)").fetchall()}
+    statements: list[str] = []
+    if "email" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN email VARCHAR(255)")
+    if "password_hash" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)")
+    added_nickname = "nickname" not in columns
+    if added_nickname:
+        statements.append("ALTER TABLE users ADD COLUMN nickname VARCHAR(50) NOT NULL DEFAULT ''")
+    if "avatar" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN avatar VARCHAR(500)")
+    if "is_active" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
+    added_updated_at = "updated_at" not in columns
+    if added_updated_at:
+        statements.append("ALTER TABLE users ADD COLUMN updated_at DATETIME")
+    for statement in statements:
+        connection.exec_driver_sql(statement)
+    if added_nickname:
+        connection.exec_driver_sql("UPDATE users SET nickname = username WHERE nickname = ''")
+    if added_updated_at:
+        connection.exec_driver_sql("UPDATE users SET updated_at = created_at WHERE updated_at IS NULL")
+    connection.exec_driver_sql(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email ON users(email) WHERE email IS NOT NULL"
+    )
 
 
 def get_session() -> Generator[Session, None, None]:

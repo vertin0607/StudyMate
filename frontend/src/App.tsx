@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
+import { GuestOnly, RequireAuth } from "./auth/RequireAuth.tsx";
 import { AppLayout } from "./layouts/AppLayout.tsx";
+import { LoginPage } from "./pages/LoginPage.tsx";
+import { RegisterPage } from "./pages/RegisterPage.tsx";
 import { DashboardPage } from "./pages/DashboardPage.tsx";
 import { GoalDetailPage } from "./pages/GoalDetailPage.tsx";
 import { GoalsPage } from "./pages/GoalsPage.tsx";
@@ -20,6 +23,11 @@ import { TutorPage } from "./pages/TutorPage.tsx";
 export default function App() {
   return (
     <Routes>
+      <Route element={<GuestOnly />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
+      <Route element={<RequireAuth />}>
       <Route element={<AppLayout />}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -67,6 +75,7 @@ export default function App() {
             />
           }
         />
+      </Route>
       </Route>
     </Routes>
   );

@@ -14,6 +14,7 @@ from app.models.recommendation import TrainingRecommendation
 from app.models.submission import ProblemCodeDraft, ProblemSubmission
 from app.schemas.problem import ClassificationUpdate, NoteWrite, ProblemWrite, TestCaseInput, TopicConfirm
 from app.services import goal_service
+from app.services.actor import acting_user
 from app.services.ai.deepseek_client import complete_json
 from app.services.ai.errors import AIError
 from app.services.ai.prompt_builder import MAX_ATTEMPTS, build_repair_messages
@@ -33,7 +34,7 @@ def list_problems(
     source_platform: str = "",
     analysis_status: str = "",
 ) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     _ensure_topics(session, user.id)
     rows = session.exec(select(Problem).where(Problem.user_id == user.id).order_by(Problem.created_at.desc())).all()
     if topic_id is not None:
@@ -60,7 +61,7 @@ def list_problems(
 
 
 def statistics(session: Session) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(select(Problem).where(Problem.user_id == user.id)).all()
     return {
         "total": len(rows),
@@ -73,7 +74,7 @@ def statistics(session: Session) -> dict:
 
 
 def topics(session: Session) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     _ensure_topics(session, user.id)
     rows = session.exec(select(ProblemTopic).where(ProblemTopic.user_id == user.id).order_by(ProblemTopic.id)).all()
     grouped: dict[str, list[dict]] = {}
@@ -84,21 +85,33 @@ def topics(session: Session) -> dict:
 
 def delete_topic(session: Session, topic_id: int) -> None:
     """删除题库知识点及其关联。不删除题目，也不删除学习目标里的知识点。"""
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     topic = session.get(ProblemTopic, topic_id)
     if topic is None or topic.user_id != user.id:
         raise HTTPException(status_code=404, detail="题库知识点不存在")
     from app.services.topic_link_service import delete_for_topics
 
-    delete_for_topics(session, [topic.id])
-    session.exec(delete(TrainingRecommendation).where(TrainingRecommendation.problem_topic_id == topic.id))
-    session.exec(delete(ProblemTopicLink).where(ProblemTopicLink.topic_id == topic.id))
+    delete_for_topics(session, [topic.id], topic.user_id)
+    session.exec(
+        delete(TrainingRecommendation).where(
+            TrainingRecommendation.problem_topic_id == topic.id,
+            TrainingRecommendation.user_id == topic.user_id,
+        )
+    )
+    owned_problem_ids = list(session.exec(select(Problem.id).where(Problem.user_id == user.id)).all())
+    if owned_problem_ids:
+        session.exec(
+            delete(ProblemTopicLink).where(
+                ProblemTopicLink.topic_id == topic.id,
+                ProblemTopicLink.problem_id.in_(owned_problem_ids),
+            )
+        )
     session.delete(topic)
     goal_service.commit_or_raise(session)
 
 
 def problems_for_topic(session: Session, topic_id: int) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     topic = session.get(ProblemTopic, topic_id)
     if topic is None or topic.user_id != user.id:
         raise HTTPException(status_code=404, detail="知识点不存在")
@@ -155,19 +168,25 @@ def update_problem(session: Session, problem_id: int, payload: ProblemWrite) -> 
 
 def delete_problem(session: Session, problem_id: int) -> None:
     problem = _owned_problem(session, problem_id)
-    judge_ids = [row.id for row in session.exec(select(ProblemJudgeResult).where(ProblemJudgeResult.problem_id == problem.id)).all()]
+    owner_id = problem.user_id
+    judge_ids = [
+        row.id
+        for row in session.exec(
+            select(ProblemJudgeResult).where(ProblemJudgeResult.problem_id == problem.id, ProblemJudgeResult.user_id == owner_id)
+        ).all()
+    ]
     if judge_ids:
         session.exec(delete(ProblemJudgeCaseResult).where(ProblemJudgeCaseResult.judge_result_id.in_(judge_ids)))
-    session.exec(delete(ProblemJudgeResult).where(ProblemJudgeResult.problem_id == problem.id))
-    session.exec(delete(ProblemWrongRecord).where(ProblemWrongRecord.problem_id == problem.id))
-    session.exec(delete(ProblemPracticeRecord).where(ProblemPracticeRecord.problem_id == problem.id))
-    session.exec(delete(ProblemLearningStatus).where(ProblemLearningStatus.problem_id == problem.id))
-    session.exec(delete(ProblemCodeDraft).where(ProblemCodeDraft.problem_id == problem.id))
-    session.exec(delete(ProblemSubmission).where(ProblemSubmission.problem_id == problem.id))
+    session.exec(delete(ProblemJudgeResult).where(ProblemJudgeResult.problem_id == problem.id, ProblemJudgeResult.user_id == owner_id))
+    session.exec(delete(ProblemWrongRecord).where(ProblemWrongRecord.problem_id == problem.id, ProblemWrongRecord.user_id == owner_id))
+    session.exec(delete(ProblemPracticeRecord).where(ProblemPracticeRecord.problem_id == problem.id, ProblemPracticeRecord.user_id == owner_id))
+    session.exec(delete(ProblemLearningStatus).where(ProblemLearningStatus.problem_id == problem.id, ProblemLearningStatus.user_id == owner_id))
+    session.exec(delete(ProblemCodeDraft).where(ProblemCodeDraft.problem_id == problem.id, ProblemCodeDraft.user_id == owner_id))
+    session.exec(delete(ProblemSubmission).where(ProblemSubmission.problem_id == problem.id, ProblemSubmission.user_id == owner_id))
     session.exec(delete(ProblemTestCase).where(ProblemTestCase.problem_id == problem.id))
     session.exec(delete(ProblemTopicLink).where(ProblemTopicLink.problem_id == problem.id))
-    session.exec(delete(ProblemNote).where(ProblemNote.problem_id == problem.id))
-    session.exec(delete(TrainingRecommendation).where(TrainingRecommendation.problem_id == problem.id))
+    session.exec(delete(ProblemNote).where(ProblemNote.problem_id == problem.id, ProblemNote.user_id == owner_id))
+    session.exec(delete(TrainingRecommendation).where(TrainingRecommendation.problem_id == problem.id, TrainingRecommendation.user_id == owner_id))
     session.delete(problem)
     goal_service.commit_or_raise(session)
 
@@ -231,7 +250,7 @@ def get_note(session: Session, problem_id: int) -> dict:
 
 def update_classification(session: Session, problem_id: int, payload: ClassificationUpdate) -> dict:
     problem = _owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     topic_ids = {topic.id for topic in session.exec(select(ProblemTopic).where(ProblemTopic.user_id == user.id)).all()}
     for link in payload.links:
         if link.topic_id not in topic_ids:
@@ -250,7 +269,7 @@ def update_classification(session: Session, problem_id: int, payload: Classifica
 
 def confirm_topic(session: Session, problem_id: int, payload: TopicConfirm) -> dict:
     problem = _owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     if payload.name in CATALOG_NAMES:
         topic = session.exec(
             select(ProblemTopic).where(ProblemTopic.user_id == user.id, ProblemTopic.name == payload.name)
@@ -281,7 +300,7 @@ def analyze_problem(session: Session, problem_id: int) -> dict:
     problem = _owned_problem(session, problem_id)
     if not problem.description.strip():
         raise HTTPException(status_code=400, detail="题目描述为空，不能分析")
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     _ensure_topics(session, user.id)
     original = {
         "description": problem.description,
@@ -363,7 +382,7 @@ def _replace_links(session: Session, problem: Problem, analysis: dict) -> None:
 
 
 def _insert_problem(session: Session, payload: ProblemWrite) -> Problem:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     _ensure_topics(session, user.id)
     now = datetime.now(timezone.utc)
     problem = Problem(user_id=user.id, created_at=now, updated_at=now)
@@ -425,7 +444,7 @@ def _reject_exact_duplicate(session: Session, platform: str, source_id: str, cur
     source_id = source_id.strip()
     if not source_id:
         return
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(
         select(Problem).where(
             Problem.user_id == user.id,
@@ -455,7 +474,7 @@ def _ensure_topics(session: Session, user_id: int | None) -> None:
 
 
 def _owned_problem(session: Session, problem_id: int) -> Problem:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     problem = session.get(Problem, problem_id)
     if problem is None or problem.user_id != user.id:
         raise HTTPException(status_code=404, detail="题目不存在")
@@ -478,7 +497,7 @@ def _summary(session: Session, problem: Problem) -> dict:
     topics = []
     for link in links:
         topic = session.get(ProblemTopic, link.topic_id)
-        if topic is None:
+        if topic is None or topic.user_id != problem.user_id:
             continue
         topics.append({"id": link.id, "topic_id": topic.id, "name": topic.name, "relevance": link.relevance, "reason": link.reason})
     return {

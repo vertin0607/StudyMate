@@ -9,6 +9,7 @@ from app.models.judge import ProblemJudgeCaseResult, ProblemJudgeResult
 from app.models.submission import ProblemCodeDraft, ProblemSubmission
 from app.schemas.submission import DraftWrite, SubmissionWrite
 from app.services import goal_service, problem_service
+from app.services.actor import acting_user
 
 UNJUDGED = "unjudged"
 UNJUDGED_MESSAGE = "代码已提交，尚未判题"
@@ -16,7 +17,7 @@ UNJUDGED_MESSAGE = "代码已提交，尚未判题"
 
 def get_draft(session: Session, problem_id: int) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = _find_draft(session, user.id, problem.id)
     if row is None:
         return {"problem_id": problem.id, "language": "cpp", "source_code": "", "updated_at": None, "saved": False}
@@ -25,7 +26,7 @@ def get_draft(session: Session, problem_id: int) -> dict:
 
 def save_draft(session: Session, problem_id: int, payload: DraftWrite) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = _find_draft(session, user.id, problem.id)
     now = datetime.now(timezone.utc)
     if row is None:
@@ -51,7 +52,7 @@ def create_submission(session: Session, problem_id: int, payload: SubmissionWrit
     if not payload.source_code.strip():
         raise HTTPException(status_code=422, detail="代码不能为空")
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = ProblemSubmission(
         user_id=user.id,
         problem_id=problem.id,
@@ -68,7 +69,7 @@ def create_submission(session: Session, problem_id: int, payload: SubmissionWrit
 
 def list_submissions(session: Session, problem_id: int) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(
         select(ProblemSubmission)
         .where(ProblemSubmission.problem_id == problem.id, ProblemSubmission.user_id == user.id)
@@ -98,11 +99,13 @@ def _find_draft(session: Session, user_id: int | None, problem_id: int | None) -
 
 
 def _owned_submission(session: Session, submission_id: int) -> ProblemSubmission:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = session.get(ProblemSubmission, submission_id)
     if row is None or row.user_id != user.id:
         raise HTTPException(status_code=404, detail="提交记录不存在")
-    problem_service._owned_problem(session, row.problem_id)
+    problem = problem_service._owned_problem(session, row.problem_id)
+    if problem.user_id != row.user_id:
+        raise HTTPException(status_code=404, detail="提交记录不存在")
     return row
 
 

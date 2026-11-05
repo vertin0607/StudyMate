@@ -20,6 +20,7 @@ from app.models.submission import ProblemSubmission
 from app.models.tutor import TutorMessage, TutorSession
 from app.models.user import User
 from app.services import diagnosis_service
+from app.services.actor import acting_as
 from app.services.practice_service import mastery_and_review_counts
 
 client = TestClient(app)
@@ -157,7 +158,9 @@ def test_empty_snapshot_and_no_model_or_writes() -> None:
     assert "commit" not in source
     with Session(engine) as session:
         before = mastery_and_review_counts(session)
-        payload = diagnosis_service.snapshot(session)
+        local = session.exec(select(User).where(User.username == "local")).one()
+        with acting_as(local.id):
+            payload = diagnosis_service.snapshot(session)
         assert list(session.new) == []
         assert list(session.dirty) == []
     assert payload["knowledge"]["points"] == []

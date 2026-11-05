@@ -14,8 +14,7 @@ from app.models.problem import Problem
 from app.models.quiz import KnowledgeMasteryEvent, Quiz
 from app.models.review import ReviewRecord
 from app.models.submission import ProblemSubmission
-from app.models.user import User
-from app.services.goal_service import LOCAL_USERNAME
+from app.services.actor import acting_user
 
 ALLOWED_DAYS = (7, 30, 90)
 REVIEW_ACTIVITY = {"pass", "partial", "fail", "initial"}
@@ -31,11 +30,7 @@ def growth(session: Session, goal_id: int | None, days: int) -> dict:
     if days not in ALLOWED_DAYS:
         raise HTTPException(status_code=422, detail="days 只能是 7、30 或 90")
     today = datetime.now().astimezone().date()
-    user = session.exec(select(User).where(User.username == LOCAL_USERNAME)).first()
-    if user is None or user.id is None:
-        if goal_id is not None:
-            raise HTTPException(status_code=404, detail="学习目标不存在")
-        return _empty(goal_id, days, today)
+    user = acting_user(session)
     goals = list(session.exec(select(LearningGoal).where(LearningGoal.user_id == user.id).order_by(LearningGoal.id)).all())
     if goal_id is not None and all(goal.id != goal_id for goal in goals):
         raise HTTPException(status_code=404, detail="学习目标不存在")

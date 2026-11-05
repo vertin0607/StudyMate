@@ -12,6 +12,7 @@ from app.models.goal import LearningGoal
 from app.models.knowledge import KnowledgePoint
 from app.models.plan import PlanRevision, StudyPlan, StudyTask
 from app.services import goal_service
+from app.services.actor import acting_user
 from app.services.ai.deepseek_client import complete_json
 from app.services.ai.errors import AIError
 from app.services.ai.prompt_builder import MAX_ATTEMPTS, build_messages, build_repair_messages
@@ -104,6 +105,14 @@ def get_history(session: Session, plan_id: int) -> dict:
     }
 
 
+def _same_goal_point(session: Session, plan: StudyPlan, knowledge_point_id: int | None) -> None:
+    if knowledge_point_id is None:
+        return
+    point = session.get(KnowledgePoint, knowledge_point_id)
+    if point is not None and point.goal_id != plan.goal_id:
+        raise HTTPException(status_code=404, detail="学习任务不存在")
+
+
 def update_task_status(session: Session, task_id: int, status: str) -> dict:
     task = session.get(StudyTask, task_id)
     if task is None:
@@ -111,6 +120,7 @@ def update_task_status(session: Session, task_id: int, status: str) -> dict:
     plan = session.get(StudyPlan, task.plan_id)
     if plan is None or goal_service.get_goal(session, plan.goal_id) is None:
         raise HTTPException(status_code=404, detail="学习任务不存在")
+    _same_goal_point(session, plan, task.knowledge_point_id)
     if plan.status != "active":
         raise HTTPException(status_code=409, detail="历史计划不能修改任务状态")
 
@@ -128,7 +138,7 @@ def update_task_status(session: Session, task_id: int, status: str) -> dict:
 
 def dashboard(session: Session) -> dict:
     """只读取已保存的计划，不调用模型。"""
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     goals = list(
         session.exec(
             select(LearningGoal)

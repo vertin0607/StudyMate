@@ -13,6 +13,7 @@ from app.models.review import ReviewRecord, ReviewSchedule
 from app.models.submission import ProblemSubmission
 from app.schemas.practice import LearningStatusUpdate, PracticeComplete, WrongWrite
 from app.services import goal_service, problem_service
+from app.services.actor import acting_user
 
 MANUAL_STATUSES = {"todo", "attempting", "self_completed"}
 JUDGED_STATUSES = {"accepted", "wrong_answer", "compile_error", "time_limit_exceeded", "runtime_error"}
@@ -26,7 +27,7 @@ COMPLETION_FLAGS = {
 
 def get_learning_status(session: Session, problem_id: int) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = _status_row(session, user.id, problem.id)
     return _status_payload(problem.id, row)
 
@@ -35,7 +36,7 @@ def update_learning_status(session: Session, problem_id: int, payload: LearningS
     if payload.status not in MANUAL_STATUSES:
         raise HTTPException(status_code=422, detail="不能手动设置系统判题结果")
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = _status_row(session, user.id, problem.id)
     if row is not None and row.status in JUDGED_STATUSES:
         raise HTTPException(status_code=409, detail="已有系统判题结果，不能用手动状态覆盖")
@@ -53,7 +54,7 @@ def update_learning_status(session: Session, problem_id: int, payload: LearningS
 
 def start_practice(session: Session, problem_id: int) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     open_row = _open_practice(session, user.id, problem.id)
     if open_row is not None:
         return {"created": False, "record": _practice_payload(open_row)}
@@ -75,7 +76,7 @@ def start_practice(session: Session, problem_id: int) -> dict:
 
 def complete_practice(session: Session, problem_id: int, record_id: int, payload: PracticeComplete) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = session.get(ProblemPracticeRecord, record_id)
     if row is None or row.user_id != user.id or row.problem_id != problem.id:
         raise HTTPException(status_code=404, detail="练习记录不存在")
@@ -95,7 +96,7 @@ def complete_practice(session: Session, problem_id: int, record_id: int, payload
 
 def practice_history(session: Session, problem_id: int) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(
         select(ProblemPracticeRecord)
         .where(ProblemPracticeRecord.user_id == user.id, ProblemPracticeRecord.problem_id == problem.id)
@@ -105,7 +106,7 @@ def practice_history(session: Session, problem_id: int) -> dict:
 
 
 def all_practice_history(session: Session) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(
         select(ProblemPracticeRecord).where(ProblemPracticeRecord.user_id == user.id).order_by(ProblemPracticeRecord.id.desc())
     ).all()
@@ -119,7 +120,7 @@ def all_practice_history(session: Session) -> dict:
 
 
 def list_wrong(session: Session, *, topic_id: int | None = None, difficulty: str = "") -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     rows = session.exec(select(ProblemWrongRecord).where(ProblemWrongRecord.user_id == user.id).order_by(ProblemWrongRecord.updated_at.desc())).all()
     items = []
     for row in rows:
@@ -137,7 +138,7 @@ def list_wrong(session: Session, *, topic_id: int | None = None, difficulty: str
 
 def add_wrong(session: Session, problem_id: int, payload: WrongWrite) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     exists = _wrong_row(session, user.id, problem.id)
     if exists is not None:
         raise HTTPException(status_code=409, detail="这道题已经在错题里")
@@ -160,7 +161,7 @@ def add_wrong(session: Session, problem_id: int, payload: WrongWrite) -> dict:
 
 def update_wrong(session: Session, problem_id: int, payload: WrongWrite) -> dict:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = _wrong_row(session, user.id, problem.id)
     if row is None:
         raise HTTPException(status_code=404, detail="错题记录不存在")
@@ -177,7 +178,7 @@ def update_wrong(session: Session, problem_id: int, payload: WrongWrite) -> dict
 
 def delete_wrong(session: Session, problem_id: int) -> None:
     problem = problem_service._owned_problem(session, problem_id)
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     row = _wrong_row(session, user.id, problem.id)
     if row is None:
         raise HTTPException(status_code=404, detail="错题记录不存在")
@@ -186,7 +187,7 @@ def delete_wrong(session: Session, problem_id: int) -> None:
 
 
 def practice_statistics(session: Session) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     problems = session.exec(select(Problem).where(Problem.user_id == user.id)).all()
     statuses = {
         row.problem_id: row.status
@@ -218,7 +219,7 @@ def practice_statistics(session: Session) -> dict:
 
 
 def practice_trends(session: Session) -> dict:
-    user = goal_service.ensure_local_user(session)
+    user = acting_user(session)
     today = datetime.now().astimezone().date()
     days = [today - timedelta(days=offset) for offset in range(6, -1, -1)]
     practices = session.exec(select(ProblemPracticeRecord).where(ProblemPracticeRecord.user_id == user.id)).all()

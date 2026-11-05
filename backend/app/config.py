@@ -10,6 +10,16 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BACKEND_DIR / ".env")
 
 
+def _cookie_secure(app_env: str) -> bool:
+    """生产环境默认 Secure。开发环境走本地 http，不强制 Secure。"""
+    raw = os.getenv("COOKIE_SECURE", "").strip().lower()
+    if raw in {"1", "true", "yes"}:
+        return True
+    if raw in {"0", "false", "no"}:
+        return False
+    return app_env == "production"
+
+
 def resolve_database_path(raw: str | None = None) -> Path:
     """把数据库路径固定到 backend 目录下，避免写到系统临时目录。"""
     value = raw if raw is not None else os.getenv("DATABASE_PATH", "data/studymate.db")
@@ -40,6 +50,10 @@ class Settings:
     deepseek_base_url: str = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").strip()
     deepseek_model: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat").strip()
     deepseek_timeout: float = float(os.getenv("DEEPSEEK_TIMEOUT", "45"))
+    app_env: str = os.getenv("APP_ENV", "development").strip().lower() or "development"
+    session_ttl_days: int = int(os.getenv("SESSION_TTL_DAYS", "14"))
+    cookie_samesite: str = os.getenv("COOKIE_SAMESITE", "lax").strip().lower() or "lax"
+    cookie_secure: bool = _cookie_secure(app_env)
 
 
 settings = Settings()

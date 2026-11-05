@@ -20,6 +20,7 @@ from app.models.topic_link import TopicKnowledgeLink
 from app.models.tutor import TutorMessage
 from app.models.user import User
 from app.services.ai.errors import AIError
+from app.services.actor import acting_as
 from app.services.goal_service import ensure_local_user
 from app.services.tutor_evidence import (
     analyze_message,
@@ -55,7 +56,8 @@ def _point(goal_id: int, name: str, mastery: int = 0, status: str = "not_started
 def _analyze(goal_id: int | None, question: str) -> dict:
     with Session(engine) as session:
         user = ensure_local_user(session)
-        return analyze_message(session, user_id=user.id, goal_id=goal_id, question=question)
+        with acting_as(user.id):
+            return analyze_message(session, user_id=user.id, goal_id=goal_id, question=question)
 
 
 def _problem(user_id: int, title: str) -> int:
