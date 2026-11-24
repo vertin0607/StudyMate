@@ -176,7 +176,7 @@ StudyMate/
 │   ├── data/                本地数据库（不提交）
 │   └── tests/               pytest，使用假模型响应
 ├── frontend/                React + Vite 界面
-├── docs/                    课程项目报告（Markdown 与 PDF）
+├── docs/                    《前端开发实训》课程设计报告（Word / PDF）
 ├── start_studymate.ps1      已安装环境下同时打开前后端窗口
 ├── README.md                环境、安装、运行
 └── DEVELOPMENT.md           分阶段实现说明
@@ -190,4 +190,4 @@ StudyMate/
 
 - 本 GitHub 仓库地址
 - 不超过 6 分钟的演示视频（详细版可放 B 站并附链接）
-- `docs/` 中的项目报告 PDF（提交前把文件名改为 `小组序号-小组长姓名-StudyMate.pdf`，并填好成员分工）
+- `docs/26-徐子涵-StudyMate.docx` 与 `.pdf`（按学院《前端开发实训》模板；第 26 组，组长徐子涵）
